@@ -1,4 +1,3 @@
-
 #variables
 $vCenter = @()
 $sites = @("vcsa")

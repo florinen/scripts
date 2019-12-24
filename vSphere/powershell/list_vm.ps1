@@ -32,7 +32,7 @@ foreach ($site in $sites) {
 	   
 	 }
 	}
-	#send output to csv and disconnect from vcenter
+	#send output to csv and disconnect from vcenter 
 	$report | Sort-Object Host | export-csv -path "C:\Users\Desktop\esxi\logs\remove-vms.csv" -NoTypeInformation -UseCulture
 	
 	Disconnect-VIServer -Confirm:$false -Server $vCenter

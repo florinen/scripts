@@ -11,6 +11,7 @@ PowerShell Version: 5.8
 OS Version: Windows 10/2008R2
 #>
 
+
 #variables
 $vCenter = @()
 $sites = @("vcsa")
