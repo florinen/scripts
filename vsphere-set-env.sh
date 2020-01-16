@@ -13,7 +13,7 @@ if [ ! -f "$DATAFILE" ]; then
 fi
 
 wget --quiet -O "$PWD/common_configuration.tfvars"\
-  "https://raw.githubusercontent.com/florinen/vsphere-env/master/vsphere_account_info.tfvars"
+  "https://raw.githubusercontent.com/florinen/vsphere-env/master/consul_backend.tfvars"
 
 BACKEND=$(sed -nr 's/^backend\s*=\s*"([^"]*)".*$/\1/p'                       "$PWD/common_configuration.tfvars")
 ADDRESS=$(sed -nr 's/^address\s*=\s*"([^"]*)".*$/\1/p'                       "$PWD/common_configuration.tfvars")
