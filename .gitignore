@@ -1,3 +1,5 @@
 *.terraform
 config
 *.tfvars
+*.txt
+

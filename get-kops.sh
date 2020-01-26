@@ -85,6 +85,24 @@ if curl --version >/dev/null; then
           else
             echo -e "${RED}#---    Error Kops versions is not selected.      ---#${RESET}"
           fi
+      # If OS type is Linux then script will provide available versions
+      elif [[ "$OS_NAME" == "Debian"* ]]; then
+          echo -e  "$foundHelmVersions"
+          if kops version  2> /dev/null; then
+            INSTALLED_KOPS=$(kops version | awk '{print $2}')
+            echo -e "${GREEN}Current version: ${INSTALLED_KOPS}${RESET}"
+          fi
+          echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
+          if [[ "$SELLECTEDVERSION" ]]; then
+            echo -e "$(tput setaf 2)#--- Downloading kops for this $OS_NAME. ---#"
+            curl -LO --progress-bar  "https://github.com/kubernetes/kops/releases/download/${SELLECTEDVERSION}/kops-linux-amd64" 2>&1
+            
+            # after user select existing Kops version
+            sudo mv "./kops-linux-amd64" "$KOPS_HOME/kops" && sudo chmod +x "$KOPS_HOME/kops"
+            echo -e "${GREEN}#---    Moving Kops to bin folder.      ---#${RESET}"
+          else
+            echo -e "${RED}#---    Error Kops versions is not selected.      ---#${RESET}"
+          fi
       else
         echo "Sorry this script does not support $OS_NAME"
       fi

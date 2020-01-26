@@ -102,6 +102,29 @@ if curl --version >/dev/null; then
         fi
         echo -e "${GREEN}--->    Helm version recorded.    <---${RESET}"
         helm version --client  | awk '{print $2}' | cut -c 25-33 | sed 's/"//g' >> .helm_record.txt
+      # If OS type is Linux then script will provide available versions
+      elif [[ "$OS_NAME" == "Debian"* ]]; then
+        echo -e  "$foundHelmVersions"
+        if helm version --client > /dev/null; then
+          INSTALLED_HELM=$(helm version --client  | awk '{print $2}' | cut -c 25-33 | sed 's/"//g')
+          echo -e "${GREEN}Current version: ${INSTALLED_HELM}${RESET}"
+        fi
+        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
+        if [[ "$SELLECTEDVERSION" ]]; then
+          echo -e "$(tput setaf 2)#--- Downloading Helm for this $OS_NAME. ---#"
+          curl -LO --progress-bar  "https://get.helm.sh/helm-${SELLECTEDVERSION}-linux-amd64.tar.gz" 2>&1
+ 
+          # after user select existing helm version
+          tar -xzvf "helm-${SELLECTEDVERSION}-linux-amd64.tar.gz"
+          sudo mv "./linux-amd64/helm" "$HELM_HOME/helm"
+          sudo rm -rf "helm-${SELLECTEDVERSION}-linux-amd64.tar.gz"
+          sudo rm -rf "$PWD/linux-amd64" 2>/dev/null
+          echo -e "${GREEN}#---    Moving helm to bin folder.      ---#${RESET}"
+        else
+          echo -e "${RED}#---    Error helm versions is not selected.      ---#${RESET}"
+        fi
+        echo -e "${GREEN}--->    Helm version recorded.    <---${RESET}"
+        helm version --client  | awk '{print $2}' | cut -c 25-33 | sed 's/"//g' >> .helm_record.txt
       fi
     else
       echo -e "${RED}#---    Error wget command not found.      ---#${RESET}"

@@ -84,6 +84,24 @@ if curl --version >/dev/null; then
         else
           echo -e "${RED}#---    Error Kubectl versions is not selected.      ---#${RESET}"
         fi
+      # If OS type is Linux then script will provide available versions
+      elif [[ "$OS_NAME" == "Debian"* ]]; then
+        echo -e  "$foundKubectlVersions"
+        if kubectl version > /dev/null; then
+          INSTALLED_KUBECTL=$(kubectl version  --client  | awk '{print $5}' | sed -nr 's/^GitVersion\s*:\s*"([^"]*)".*$/\1/p')
+          echo -e "${GREEN}Current version: ${INSTALLED_KUBECTL}${RESET}"
+        fi
+        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
+        if [[ "$SELLECTEDVERSION" ]]; then
+          echo -e "$(tput setaf 2)#--- Downloading kubectl for this $OS_NAME. ---#"
+          curl -LO --progress-bar  "https://storage.googleapis.com/kubernetes-release/release/${SELLECTEDVERSION}/bin/linux/amd64/kubectl" 2>&1
+         
+          # after user select existing kubectl version
+          chmod +x kubectl && sudo mv kubectl "${KUBECTL_HOME}/kubectl" 
+          echo -e "${GREEN}#---    Moving kubectl to bin folder.      ---#${RESET}"
+        else
+          echo -e "${RED}#---    Error Kubectl versions is not selected.      ---#${RESET}"
+        fi
       fi
     else
       echo -e "${RED}#---    Error wget command not found.      ---#${RESET}"
