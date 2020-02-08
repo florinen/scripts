@@ -2,7 +2,7 @@
 
 # HOSTS can be either you ISP or google.com
 HOSTS="google.com"
-COUNT=2
+COUNT=3
 
 echo "Pinging.."
 echo "HOSTS: " $HOSTS
@@ -13,7 +13,7 @@ do
   counting=$(ping -c $COUNT $myHost | grep 'received' | awk -F',' '{ print $2 }' | awk '{ print $1 }' )
   echo "counting: " $counting
 
-  if [ $counting -eq 2 ]; then
+  if [ $counting -eq 3 ]; then
    echo "Ping OK"
 
   else
