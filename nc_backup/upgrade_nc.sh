@@ -9,20 +9,120 @@ RESET=$(tput sgr0)
 
 CURRDATE=$( date '+%m-%d-%Y' )
 NC_FOLDER="nextcloud"
-NC_TARGET_VER="19.0.0"
+NC_TARGET_VER="18.0.6"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
 DOWNLOAD_NC="curl -LO https://download.nextcloud.com/server/releases/nextcloud-$NC_TARGET_VER"
-NC_OLD_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |grep -o '[^ ]*$')  # Cut the last field first space being the delimiter
 
-
-if [[ -d "${DIR_DNL}" ]]; then
-  	echo "No need to create ${DIR_DNL}, already exists"
-elif [[ ! -e "${DIR_DNL}" ]]; then
-   	mkdir "${DIR_DNL}"
+## FUNCTIONS ##
+## Check NC versions
+version_check(){
+    NC_OLD_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |grep -o '[^ ]*$')  # Cut the last field first space being the delimiter
+    NC_NEW_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |grep -o '[^ ]*$')
+if [[ -d "${NC_LOCATION}"/"${NC_FOLDER}"-old* ]]; then
+    NC_PREV_VER=$(cat "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/config/config.php | grep version | awk '{print $3}' | sed "s/['\,,\"]//g" | cut -b -6)
+else
+    echo "$YELLOW>>Previous config.php not available right now!!!<<$RESET"
 fi
+}
+
+## Make directories 
+create_dir(){
+    if [[ -d "${DIR_DNL}" ]]; then
+        echo "No need to create ${DIR_DNL}, already exists"
+    elif [[ ! -e "${DIR_DNL}" ]]; then
+        echo "Creating download directory!"
+        mkdir "${DIR_DNL}"
+    fi
+    if [[ -d "${DIR}" ]]; then
+        echo ""${DIR}" already exists"
+    elif [[ ! -e "${DIR}" ]]; then
+        echo "Creating backup directory!"
+        mkdir "${DIR}"
+    fi
+if [[ "${?}" -ne 0 ]]; then 
+    echo "Nginx service check command did not execute successlully "
+    exit 1
+fi
+}
+## Stop and Start services
+nginx_service_check(){
+    NGINX_STATUS=$(/etc/init.d/nginx status |grep Active |awk '{print $2}')
+    if [[ "${NGINX_STATUS}" = "inactive" ]]; then
+        echo "Nginx not running, try starting...!"
+        /etc/init.d/nginx restart ;
+        /etc/init.d/redis-server restart ;
+        /etc/init.d/php7.4-fpm restart
+        
+    elif [[ "${NGINX_STATUS}" = "active" ]]; then
+        echo "NGINX service running, try stopping...!"
+        /etc/init.d/nginx stop
+    fi
+if [[ "${?}" -ne 0 ]]; then 
+    echo "Nginx service check command did not execute successlully "
+fi
+}
+## Disable and enable CronJobs
+check_cronjob(){
+    CRONJOB=$(crontab  -l -u www-data |cut -d "*" -f1)
+    if [[ "${CRONJOB}"  = "" ]]; then
+        echo "Cron job is enabled, trying to disable...!"
+        crontab  -l -u www-data | sed  's/^/#/' |crontab -u www-data -
+    elif [[ "${CRONJOB}" = "#" ]]; then
+        echo "Cron job is disabled, trying to enable...!"
+        crontab  -l -u www-data | sed  's/^.//' |crontab -u www-data -
+    fi
+if [[ "${?}" -ne 0 ]]; then 
+    echo "Crontab check command did not execute successlully "
+
+fi
+}
+## Check Ownership and Permissions of NC files and folders
+ckeck_owner_permissions(){
+    CHECK_OWNER=$(ls -l "${NC_LOCATION}" |grep -v old |grep  next |awk '{print $3" "$4}')
+    if [[ "${CHECK_OWNER}" != "www-data www-data" ]];then
+        echo "Adjusting ${NC_FOLDER} ownership"
+        chown -R www-data:www-data /var/www/nextcloud
+        chown -R www-data:acmeuser /var/www/letsencrypt
+    else
+        echo "Ownership is correct!"
+    fi
+    if [[ "${CHECK_OWNER}" != "www-data www-data" ]]; then
+        echo "Fix ${NC_FOLDER} files and directory permissions"
+        find /var/www/nextcloud/ -type d -exec chmod 750 {} \;
+        find /var/www/nextcloud/ -type f -exec chmod 640 {} \;
+    else
+        echo "File permission is correct!"
+    fi
+if [[ "${?}" -ne 0 ]]; then 
+    echo "Error check command did not execute successlully "
+fi
+}
+## Performing file scan
+file_scan(){
+    sudo -u www-data php /var/www/nextcloud/console.php files:scan --all
+
+if [[ "${?}" -ne 0 ]]; then 
+    echo "Error scan command did not execute successlully "
+fi
+}
+## Check if folder NC new or old exist
+folder_check(){
+    REM_NC_OLD=$(ls -l "${DIR}" |grep -i old |awk '{print $9}')
+    CHECK_OLD_NC=$(ls -l "${NC_LOCATION}" |grep -i old |awk '{print $9}')
+    NC_RENAME=$(ls -l "${NC_LOCATION}" |grep -v old |grep  next |grep -o '[^ ]*$')
+    NEW_NC_FOLDER=$(ls -l ${DIR_DNL} |grep nextcloud |awk '{print $9}')
+}
+
+#+++++++++++++++++++++++#
+## STARTING the UPGRADE ##
+#++++++++++++++++++++++++#
+
+## Create download directory
+create_dir
 ## Check the version of NC you want to upgrade to and download it, if not STOP
+version_check
 if [[ "${NC_OLD_VER}" != "${NC_TARGET_VER}" ]]; then
     echo "You are about to upgrade NC to $GREEN >> ${NC_TARGET_VER} <<$RESET...!!!"
     if [[ "${NC_OLD_VER}" != "${NC_TARGET_VER}" ]]; then
@@ -36,31 +136,16 @@ else
     echo "You DON'T need to upgrade, NC version ${YELLOW} >> ${NC_TARGET_VER} is a match with ${NC_OLD_VER} <<$RESET...!!!"
     exit
 fi
-## Disable NGINX service
-NGINX_STATUS=$(/etc/init.d/nginx status |grep Active |awk '{print $2}')
-if [[ "${NGINX_STATUS}" = "active" ]]; then
-    echo "Stopping Nginx"
-    /etc/init.d/nginx stop
-elif [[ "${NGINX_STATUS}" = "inactive" ]]; then
-    echo "NGINX service not running"
-fi
-## Remove all cron jobs
-CRONJOB=$(crontab  -l -u www-data |cut -d "*" -f1)
-if [[ "${CRONJOB}"  = "#" ]]; then
-    echo "Cron job is disabled"
-  
-elif [[ "${CRONJOB}" = "" ]]; then
-    echo "Disable the cronjon"
-    crontab  -l -u www-data | sed  's/^/#/' |crontab -u www-data -
-fi
-# Make directory to move old NC folder if exists
-if [[ -d "${DIR}" ]]; then
-  	echo ""${DIR}" already exists"
-elif [[ ! -e "${DIR}" ]]; then
-   	mkdir "${DIR}"
-fi
+
+## Check NGINX service and disable it
+nginx_service_check
+## Check and remove all cron jobs
+check_cronjob
+
+## Make directory to move old NC folder if exists
+create_dir
 ## Removing old NC backups if exists
-REM_NC_OLD=$(ls -l "${DIR}" |grep -i old |awk '{print $9}')
+folder_check
 if [[ "${REM_NC_OLD}" != "" ]]; then  
     echo -e "Removing old backup from ${DIR}/\n${REM_NC_OLD}"
     for val in "${REM_NC_OLD}/*"
@@ -71,7 +156,7 @@ else
     echo "Folder not existing, not removed"
 fi
 ## Check if old NC backups exist, move it to new folder create earlier for later deletion, extra step not really need it!!
-CHECK_OLD_NC=$(ls -l "${NC_LOCATION}" |grep -i old |awk '{print $9}')
+folder_check
 if [[ "${CHECK_OLD_NC}" = "" ]]; then
     echo "Nothing to Move...!!! "
 elif [[ "${NC_LOCATION}"/"${NC_FOLDER}"-old ]]; then
@@ -79,15 +164,15 @@ elif [[ "${NC_LOCATION}"/"${NC_FOLDER}"-old ]]; then
     mv "${NC_LOCATION}"/"${NC_FOLDER}"-old* "${DIR}"/    
 fi
 ## Rename current NC folder to nextcloud-old+date
-NC_RENAME=$(ls -l "${NC_LOCATION}" |grep -v old |grep  next |grep -o '[^ ]*$')
+folder_check
 if [[  "${NC_RENAME}" = "${NC_FOLDER}" ]]; then
     echo "Renameing folder ${NC_FOLDER} to ${NC_FOLDER}-old_"${CURRDATE}""
     mv "${NC_LOCATION}"/"${NC_FOLDER}" "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"
 else
     echo "NC did not rename"
 fi
-# Copy new NC to /var/www 
-NEW_NC_FOLDER=$(ls -l ${DIR_DNL} |grep nextcloud |awk '{print $9}')
+# Copy new just downloaded NC to /var/www 
+folder_check
 if [[ "${NEW_NC_FOLDER}" != "" ]]; then
     echo "Copy new NC folder to ${NC_LOCATION}/"
     cp -r "${DIR_DNL}"/"${NC_FOLDER}" "${NC_LOCATION}"/ ;
@@ -95,7 +180,7 @@ if [[ "${NEW_NC_FOLDER}" != "" ]]; then
 else
     echo "${NC_FOLDER} did not exist...!!!"
 fi
-## Copy old config.php to new NC
+## Copy old config.php fron old NC folder to new NC
 if [[ -d "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}" ]]; then
     echo "Copy config.php from old ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE} to new ${NC_LOCATION}/${NC_FOLDER}..."
     cp -r "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/config/config.php "${NC_LOCATION}"/"${NC_FOLDER}"/config/config.php
@@ -119,82 +204,51 @@ else
     echo "Themes folder did not copy successful"
 fi
 ## Adjust file ownership and permissions:
-CHECK_OWNER=$(ls -l "${NC_LOCATION}" |grep -v old |grep  next |awk '{print $3" "$4}')
-if [[ "${CHECK_OWNER}" != "www-data www-data" ]];then
-    echo "Adjusting ${NC_FOLDER} ownership"
-    chown -R www-data:www-data /var/www/nextcloud
-    chown -R www-data:acmeuser /var/www/letsencrypt
-else
-    echo "Ownership is correct"
-fi
-if [[ "${CHECK_OWNER}" != "www-data www-data" ]]; then
-    echo "Fix ${NC_FOLDER} files and directory permissions"
-    find /var/www/nextcloud/ -type d -exec chmod 750 {} \;
-    find /var/www/nextcloud/ -type f -exec chmod 640 {} \;
-else
-    echo "Error file permission not applied"
-fi
+ckeck_owner_permissions
 ## Starting NGINX and Restart Redis and PHP7.3-fpm
-NGINX_STATUS=$(/etc/init.d/nginx status |grep Active |awk '{print $2}')
-if [[ "${NGINX_STATUS}" = "inactive" ]]; then
-    echo "Nginx not running, try starting...!"
-    /etc/init.d/nginx restart ;
-    /etc/init.d/redis-server restart ;
-    /etc/init.d/php7.4-fpm restart
-elif [[ "${NGINX_STATUS}" = "active" ]]; then
-    echo "NGINX service running"
-fi
-## Performing the UPGRADE
+nginx_service_check
+
+## Performing the UPGRADE of NC
 # echo "Disable app >>files<<"
-sudo -u www-data php /var/www/nextcloud/occ app:disable files
+#sudo -u www-data php /var/www/nextcloud/occ app:disable files
 echo "Performing the OCC Upgrade..."
+version_check
+nc_upgrade(){
 sudo -u www-data php /var/www/nextcloud/occ upgrade
+
+if [[ "${?}" -ne 0 ]]; then 
+    echo "Error scan command did not execute successlully "
+fi
+
+}
 
 ## Files do not show up after a upgrade. A rescan of the files can help:
 echo "Performing all file scan..."
-sudo -u www-data php /var/www/nextcloud/console.php files:scan --all
-
+file_scan
 ## When upgrade finished, enable cron-job:
-CRONJOB=$(crontab  -l -u www-data |cut -d "*" -f1)
-if [[ "${CRONJOB}" = "" ]]; then
-    echo "Cron job is enabled"
-elif [[ "${CRONJOB}" = "#" ]]; then
-    echo "Enable  cronjob"
-    crontab  -l -u www-data | sed  's/^.//' |crontab -u www-data -
-fi
+check_cronjob
 
-#######
-## Changet NC_TARGET_VER to anything and comment all lines above here to triger manual rollback.
-#######
-## Rollback ig upgrade fails
-## This will check first and see if UPGRADE was successful or not
-NC_NEW_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |grep -o '[^ ]*$')
-NC_PREV_VER=$(cat "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/config/config.php | grep version | awk '{print $3}' | sed "s/['\,,\"]//g" | cut -b -6)
 
+##++++++++++++++++++++++++++++++##
+## Rolling back if upgrade fails##
+##++++++++++++++++++++++++++++++##
+
+# Changet NC_TARGET_VER to anything and comment all lines above here to triger manual rollback.
+# This will check first and see if UPGRADE was successful or not
+
+version_check
 if [[ "${NC_NEW_VER}" = "${NC_TARGET_VER}" ]]; then
     echo "...$GREEN NC successfuly upgraded to version ${NC_NEW_VER}...!!$RESET"
     exit
 else 
-    echo "${YELLOW}>> Something went wrong, rolling back to old version ${NC_PREV_VER}<<$RESET"
+    echo "${YELLOW}>> Something went wrong, rolling back to previous version ${NC_PREV_VER}<<$RESET"
 fi
 ## In case versions not a match then rollback. 
 if [[ "${NC_NEW_VER}" != "${NC_TARGET_VER}" ]]; then
     ## Stop NGINX service
-    NGINX_STATUS=$(/etc/init.d/nginx status |grep Active |awk '{print $2}')
-    if [[ "${NGINX_STATUS}" = "active" ]]; then
-        echo "Stopping Nginx"
-        /etc/init.d/nginx stop
-    elif [[ "${NGINX_STATUS}" = "inactive" ]]; then
-        echo "NGINX service not running"
-    fi
-    ## Remove CronJob
-    CRONJOB=$(crontab  -l -u www-data |cut -d "*" -f1)
-    if [[ "${CRONJOB}" = "#" ]]; then
-        echo "Cron job is disabled"
-    elif [[ "${CRONJOB}" = "" ]]; then
-        echo "Disable the cronjon"
-        crontab  -l -u www-data | sed  's/^/#/' |crontab -u www-data -
-    fi
+     nginx_service_check
+#     ## Remove CronJob
+     check_cronjob
     ## Remove new NC folder and rename backup nextcloud-old+date to nextcloud
     if [[ ! -d "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"  ]]; then  
         echo "Folder ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE} does not exists..."
@@ -203,43 +257,15 @@ if [[ "${NC_NEW_VER}" != "${NC_TARGET_VER}" ]]; then
         rm -rf "${NC_LOCATION}"/"${NC_FOLDER}"
         mv "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}" "${NC_LOCATION}"/"${NC_FOLDER}"  
     fi
-    CHECK_OWNER=$(ls -l "${NC_LOCATION}" |grep -v old |grep  next |awk '{print $3" "$4}')
-    if [[ "${CHECK_OWNER}" != "www-data www-data" ]];then
-        echo "Adjusting ${NC_FOLDER} ownership"
-        chown -R www-data:www-data /var/www/nextcloud
-        chown -R www-data:acmeuser /var/www/letsencrypt
-    else
-        echo "Ownership is correct"
-    fi
-    if [[ "${CHECK_OWNER}" != "www-data www-data" ]]; then
-        echo "Fix ${NC_FOLDER} files and directory permissions"
-        find /var/www/nextcloud/ -type d -exec chmod 750 {} \;
-        find /var/www/nextcloud/ -type f -exec chmod 640 {} \;
-    else
-        echo "File permission is correct"
-    fi
-
+    ## Apply correct owner and permission
+    ckeck_owner_permissions
     ## Starting NGINX and Restart Redis and PHP7.3-fpm
-    NGINX_STATUS=$(/etc/init.d/nginx status |grep Active |awk '{print $2}')
-    if [[ "${NGINX_STATUS}" = "inactive" ]]; then
-        echo "Nginx not running, try starting...!"
-        /etc/init.d/nginx restart ;
-        /etc/init.d/redis-server restart ;
-        /etc/init.d/php7.4-fpm restart
-    elif [[ "${NGINX_STATUS}" = "active" ]]; then
-        echo "NGINX service running"
-    fi
-
+       nginx_service_check
 ## Files do not show up after a upgrade. A rescan of the files can help:
 echo "Performing all file scan..."
-sudo -u www-data php /var/www/nextcloud/console.php files:scan --all
+ file_scan
 
-    CRONJOB=$(crontab  -l -u www-data |cut -d "*" -f1)
-    if [[ "${CRONJOB}" = "" ]]; then
-        echo "Cron job is enabled"
-    elif [[ "${CRONJOB}" = "#" ]]; then
-        echo "Enable  cronjob"
-        crontab  -l -u www-data | sed  's/^.//' |crontab -u www-data -
-    fi
+# ## Enable Cron
+ check_cronjob
 echo "....${YELLOW} Rollback successfully..! $RESET.... "
 fi
