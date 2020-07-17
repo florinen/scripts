@@ -9,7 +9,7 @@ RESET=$(tput sgr0)
 
 CURRDATE=$( date '+%m-%d-%Y' )
 NC_FOLDER="nextcloud"
-NC_TARGET_VER="18.0.6"
+NC_TARGET_VER="18.0.7"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
@@ -20,24 +20,25 @@ DOWNLOAD_NC="curl -LO https://download.nextcloud.com/server/releases/nextcloud-$
 version_check(){
     NC_OLD_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |grep -o '[^ ]*$')  # Cut the last field first space being the delimiter
     NC_NEW_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |grep -o '[^ ]*$')
-if [[ -d "${NC_LOCATION}"/"${NC_FOLDER}"-old* ]]; then
-    NC_PREV_VER=$(cat "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/config/config.php | grep version | awk '{print $3}' | sed "s/['\,,\"]//g" | cut -b -6)
-else
-    echo "$YELLOW>>Previous config.php not available right now!!!<<$RESET"
-fi
+    OLD_CONF=$(ls -l "${NC_LOCATION}" |grep -i old |awk '{print $9}')
+    if [[ ${OLD_CONF} = "" ]]; then
+        echo "$YELLOW>>Previous config.php not available right now!!!<<$RESET"
+    else
+        NC_PREV_VER=$(cat "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/config/config.php | grep version | awk '{print $3}' | sed "s/['\,,\"]//g" | cut -b -6)
+    fi
 }
 
 ## Make directories 
 create_dir(){
     if [[ -d "${DIR_DNL}" ]]; then
-        echo "No need to create ${DIR_DNL}, already exists"
-    elif [[ ! -e "${DIR_DNL}" ]]; then
+        echo "No need to create ${DIR_DNL}, already exists" 1>/dev/null
+    else 
         echo "Creating download directory!"
         mkdir "${DIR_DNL}"
     fi
     if [[ -d "${DIR}" ]]; then
-        echo ""${DIR}" already exists"
-    elif [[ ! -e "${DIR}" ]]; then
+        echo "No need to create ${DIR}, already exists" 1>/dev/null
+    else 
         echo "Creating backup directory!"
         mkdir "${DIR}"
     fi
@@ -120,13 +121,13 @@ folder_check(){
 #++++++++++++++++++++++++#
 
 ## Create download directory
-create_dir
+#create_dir
 ## Check the version of NC you want to upgrade to and download it, if not STOP
 version_check
 if [[ "${NC_OLD_VER}" != "${NC_TARGET_VER}" ]]; then
     echo "You are about to upgrade NC to $GREEN >> ${NC_TARGET_VER} <<$RESET...!!!"
     if [[ "${NC_OLD_VER}" != "${NC_TARGET_VER}" ]]; then
-        cd "${DIR_DNL}" ;
+        create_dir ; cd "${DIR_DNL}" ;
         ${DOWNLOAD_NC}.zip ;
         unzip "${DIR_DNL}"/"${NC_FOLDER}"-"${NC_TARGET_VER}".zip &>/dev/null ;
         rm "${DIR_DNL}"/"${NC_FOLDER}"-"${NC_TARGET_VER}".zip ; 
@@ -148,10 +149,7 @@ create_dir
 folder_check
 if [[ "${REM_NC_OLD}" != "" ]]; then  
     echo -e "Removing old backup from ${DIR}/\n${REM_NC_OLD}"
-    for val in "${REM_NC_OLD}/*"
-    do
-       rm -rf "${DIR}"/"${val#*/}"
-    done
+    rm -rf "${DIR}"/*
 else 
     echo "Folder not existing, not removed"
 fi
