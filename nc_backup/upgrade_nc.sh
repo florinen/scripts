@@ -116,12 +116,12 @@ folder_check(){
     NEW_NC_FOLDER=$(ls -l ${DIR_DNL} |grep nextcloud |awk '{print $9}')
 }
 
-#+++++++++++++++++++++++#
+##+++++++++++++++++++++++#
 ## STARTING the UPGRADE ##
-#++++++++++++++++++++++++#
+##+++++++++++++++++++++++#
 
-## Create download directory
-#create_dir
+# Create download directory
+create_dir
 ## Check the version of NC you want to upgrade to and download it, if not STOP
 version_check
 if [[ "${NC_OLD_VER}" != "${NC_TARGET_VER}" ]]; then
@@ -144,41 +144,40 @@ nginx_service_check
 check_cronjob
 
 ## Make directory to move old NC folder if exists
-create_dir
 ## Removing old NC backups if exists
 folder_check
-if [[ "${REM_NC_OLD}" != "" ]]; then  
+if [[ -z "${REM_NC_OLD}" ]]; then  
+    echo "Folder does not exists!!"
+else
     echo -e "Removing old backup from ${DIR}/\n${REM_NC_OLD}"
     rm -rf "${DIR}"/*
-else 
-    echo "Folder not existing, not removed"
 fi
-## Check if old NC backups exist, move it to new folder create earlier for later deletion, extra step not really need it!!
+## Check if old NC backups exist, move it to new folder created earlier for later deletion, extra step not really need it!!
 folder_check
-if [[ "${CHECK_OLD_NC}" = "" ]]; then
+if [[ -z "${CHECK_OLD_NC}" ]]; then
     echo "Nothing to Move...!!! "
-elif [[ "${NC_LOCATION}"/"${NC_FOLDER}"-old ]]; then
+else
     echo "Moving old backup to ${DIR} before deletion..."
     mv "${NC_LOCATION}"/"${NC_FOLDER}"-old* "${DIR}"/    
 fi
 ## Rename current NC folder to nextcloud-old+date
 folder_check
-if [[  "${NC_RENAME}" = "${NC_FOLDER}" ]]; then
+if [[ -z "${NC_RENAME}" ]]; then
+        echo "NC did not rename"
+else
     echo "Renameing folder ${NC_FOLDER} to ${NC_FOLDER}-old_"${CURRDATE}""
     mv "${NC_LOCATION}"/"${NC_FOLDER}" "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"
-else
-    echo "NC did not rename"
 fi
-# Copy new just downloaded NC to /var/www 
+# # Copy new just downloaded NC to /var/www 
 folder_check
-if [[ "${NEW_NC_FOLDER}" != "" ]]; then
+if [[ -z "${NEW_NC_FOLDER}" ]]; then
+    echo "New downloaded ${NC_FOLDER} did not exist...!!!"
+else
     echo "Copy new NC folder to ${NC_LOCATION}/"
     cp -r "${DIR_DNL}"/"${NC_FOLDER}" "${NC_LOCATION}"/ ;
     rm -rf "${DIR_DNL}"/"${NC_FOLDER}"
-else
-    echo "${NC_FOLDER} did not exist...!!!"
 fi
-## Copy old config.php fron old NC folder to new NC
+# ## Copy old config.php fron old NC folder to new NC
 if [[ -d "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}" ]]; then
     echo "Copy config.php from old ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE} to new ${NC_LOCATION}/${NC_FOLDER}..."
     cp -r "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/config/config.php "${NC_LOCATION}"/"${NC_FOLDER}"/config/config.php
