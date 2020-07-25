@@ -14,7 +14,7 @@ DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
 DOWNLOAD_NC="curl -LO https://download.nextcloud.com/server/releases/nextcloud-$NC_TARGET_VER"
-
+PHP_VER="7.4"
 ## FUNCTIONS ##
 ## Check NC versions
 version_check(){
@@ -54,7 +54,7 @@ nginx_service_check(){
         echo "Nginx not running, try starting...!"
         /etc/init.d/nginx restart ;
         /etc/init.d/redis-server restart ;
-        /etc/init.d/php7.4-fpm restart
+        /etc/init.d/php"${PHP_VER}"-fpm restart
         
     elif [[ "${NGINX_STATUS}" = "active" ]]; then
         echo "NGINX service running, try stopping...!"
@@ -92,8 +92,8 @@ ckeck_owner_permissions(){
     if [[ "${CHECK_OWNER}" != "www-data www-data" ]]; then
         echo "Fix ${NC_FOLDER} files and directory permissions"
         find /var/www/nextcloud/ -type d -exec chmod 750 {} \;
-        find /var/www/nextcloud/ -type f -exec chmod 640 {} \;
-    else
+        find /var/www/nextcloud/ -type f -exec chmod 640 {} \;   #May have permission issues  
+    else                                                            
         echo "File permission is correct!"
     fi
 if [[ "${?}" -ne 0 ]]; then 
@@ -108,6 +108,15 @@ if [[ "${?}" -ne 0 ]]; then
     echo "Error scan command did not execute successlully "
 fi
 }
+## Performing the Upgrade
+nc_upgrade(){
+sudo -u www-data php /var/www/nextcloud/occ upgrade
+
+if [[ "${?}" -ne 0 ]]; then 
+    echo "Error scan command did not execute successlully "
+fi
+}
+
 ## Check if folder NC new or old exist
 folder_check(){
     REM_NC_OLD=$(ls -l "${DIR}" |grep -i old |awk '{print $9}')
@@ -209,15 +218,10 @@ nginx_service_check
 # echo "Disable app >>files<<"
 #sudo -u www-data php /var/www/nextcloud/occ app:disable files
 echo "Performing the OCC Upgrade..."
+
 version_check
-nc_upgrade(){
-sudo -u www-data php /var/www/nextcloud/occ upgrade
-
-if [[ "${?}" -ne 0 ]]; then 
-    echo "Error scan command did not execute successlully "
-fi
-
-}
+## Upgrading
+nc_upgrade
 
 ## Files do not show up after a upgrade. A rescan of the files can help:
 echo "Performing all file scan..."
@@ -226,12 +230,12 @@ file_scan
 check_cronjob
 
 
-##++++++++++++++++++++++++++++++##
-## Rolling back if upgrade fails##
-##++++++++++++++++++++++++++++++##
+#++++++++++++++++++++++++++++++##
+# Rolling back if upgrade fails##
+#++++++++++++++++++++++++++++++##
 
-# Changet NC_TARGET_VER to anything and comment all lines above here to triger manual rollback.
-# This will check first and see if UPGRADE was successful or not
+## Changet NC_TARGET_VER to anything and comment all lines above here to triger manual rollback.
+## This will check first and see if UPGRADE was successful or not
 
 version_check
 if [[ "${NC_NEW_VER}" = "${NC_TARGET_VER}" ]]; then
