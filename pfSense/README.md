@@ -1,7 +1,5 @@
-# scripts
-common scripts
-
 ## pfSense
+
 1. Login to pfsense with ssh, select "8" for shell command
 2. Go to: /usr/local/bin
 3. create file, vi ping-check.sh and paste the content of 'ping-check.sh" then save and qiut
