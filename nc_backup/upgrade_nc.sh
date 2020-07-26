@@ -113,7 +113,7 @@ nc_upgrade(){
 sudo -u www-data php /var/www/nextcloud/occ upgrade
 
 if [[ "${?}" -ne 0 ]]; then 
-    echo "Error scan command did not execute successlully "
+    echo "Error upgrade command did not execute successlully "
 fi
 }
 
@@ -122,7 +122,7 @@ folder_check(){
     REM_NC_OLD=$(ls -l "${DIR}" |grep -i old |awk '{print $9}')
     CHECK_OLD_NC=$(ls -l "${NC_LOCATION}" |grep -i old |awk '{print $9}')
     NC_RENAME=$(ls -l "${NC_LOCATION}" |grep -v old |grep  next |grep -o '[^ ]*$')
-    NEW_NC_FOLDER=$(ls -l ${DIR_DNL} |grep nextcloud |awk '{print $9}')
+    NEW_NC_FOLDER=$(ls -l "${DIR_DNL}" |grep nextcloud |awk '{print $9}')
 }
 
 ##+++++++++++++++++++++++#
