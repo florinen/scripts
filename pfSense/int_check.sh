@@ -23,7 +23,7 @@
 # reboot will not correct.
 ALLDEST="google.com yahoo.com 24.93.40.36 8.8.8.8"
 # Interface to reset, usually your WAN
-BOUNCE=vmx0
+BOUNCE=igb0
 
 # Log file
 LOGFILE=/root/pingtest.log
