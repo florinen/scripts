@@ -9,12 +9,12 @@ RESET=$(tput sgr0)
 
 CURRDATE=$( date '+%m-%d-%Y' )
 NC_FOLDER="nextcloud"
-NC_TARGET_VER="18.0.7"
+NC_TARGET_VER="18.0.9"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
 DOWNLOAD_NC="curl -LO https://download.nextcloud.com/server/releases/nextcloud-$NC_TARGET_VER"
-PHP_VER="7.4"
+PHP_VER="7.3"
 ## FUNCTIONS ##
 ## Check NC versions
 version_check(){
