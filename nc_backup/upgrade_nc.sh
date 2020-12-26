@@ -14,17 +14,19 @@ DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
 DOWNLOAD_NC="curl -LO https://download.nextcloud.com/server/releases/nextcloud-$NC_TARGET_VER"
-PHP_VER="7.3"
+PHP_VER="7.4"
 ## FUNCTIONS ##
 ## Check NC versions
 version_check(){
-    NC_OLD_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |grep -o '[^ ]*$')  # Cut the last field first space being the delimiter
-    NC_NEW_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |grep -o '[^ ]*$')
+    #NC_OLD_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |grep -o '[^ ]*$')  # Cut the last field first space being the delimiter
+    NC_OLD_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |awk '{print $NF}')
+    NC_NEW_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |awk '{print $NF}')
     OLD_CONF=$(ls -l "${NC_LOCATION}" |grep -i old |awk '{print $9}')
     if [[ ${OLD_CONF} = "" ]]; then
         echo "$YELLOW>>Previous config.php not available right now!!!<<$RESET"
     else
-        NC_PREV_VER=$(cat "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/config/config.php | grep version | awk '{print $3}' | sed "s/['\,,\"]//g" | cut -b -6)
+        #NC_PREV_VER=$(cat "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/config/config.php | grep version | awk '{print $3}' | sed "s/['\,,\"]//g" | cut -b -6)
+    NC_PREV_VER=$(sudo -u www-data php  ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE}/occ -V |awk '{print $NF}')
     fi
 }
 
@@ -43,7 +45,7 @@ create_dir(){
         mkdir "${DIR}"
     fi
 if [[ "${?}" -ne 0 ]]; then 
-    echo "Nginx service check command did not execute successlully "
+    echo "Make Dir command did not execute successlully "
     exit 1
 fi
 }
