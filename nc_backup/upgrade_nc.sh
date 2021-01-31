@@ -9,7 +9,7 @@ RESET=$(tput sgr0)
 
 CURRDATE=$( date '+%m-%d-%Y' )
 NC_FOLDER="nextcloud"
-NC_TARGET_VER="19.0.6"
+NC_TARGET_VER="20.0.6"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
@@ -26,7 +26,7 @@ version_check(){
         echo "$YELLOW>>Previous config.php not available right now!!!<<$RESET"
     else
         #NC_PREV_VER=$(cat "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/config/config.php | grep version | awk '{print $3}' | sed "s/['\,,\"]//g" | cut -b -6)
-    NC_PREV_VER=$(sudo -u www-data php  ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE}/occ -V |awk '{print $NF}')
+        NC_PREV_VER=$(sudo -u www-data php  ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE}/occ -V |awk '{print $NF}')
     fi
 }
 
