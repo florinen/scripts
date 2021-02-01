@@ -279,8 +279,9 @@ else
     echo ""
 fi
 
-read -p "Would you like to continue with manual update: " ANSWER
+read -p "${YELLOW}Would you like to continue with manual update: ${RESET}" ANSWER
 if [[ $ANSWER == [Yy]* ]]; then
+    echo "${YELLOW}ONLY ${RESET}Y\y ${YELLOW}will proceed forward with upgrade, press anything else will cancel.!!${RESET}"
     echo "Proceeding with Applying Upgrade"
     sudo -u www-data php /var/www/nextcloud/updater/updater.phar --no-interaction     ##
 else
@@ -288,6 +289,7 @@ else
     exit 1
 fi
 if [[ "${?}" -eq 0 ]]; then
+    echo ""
     echo "Fixing DB missing opjects"
     bash $HOME/scripts/nc_backup/db_missing_objects.sh
 else 
