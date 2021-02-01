@@ -278,3 +278,18 @@ else
     echo "Please update manual executing: ${YELLOW}sudo -u www-data php /var/www/nextcloud/updater/updater.phar --no-interaction${RESET}"
     echo ""
 fi
+
+read -p "Would you like to continue with manual update: " ANSWER
+if [[ $ANSWER == [Yy]* ]]; then
+    echo "Proceeding with Applying Upgrade"
+    sudo -u www-data php /var/www/nextcloud/updater/updater.phar --no-interaction     ##
+else
+    echo "Applying Changes Canceled"
+    exit 1
+fi
+if [[ "${?}" -eq 0 ]]; then
+    echo "Fixing DB missing opjects"
+    bash $HOME/scripts/nc_backup/db_missing_objects.sh
+else 
+    echo "${?}"
+fi
