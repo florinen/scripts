@@ -271,21 +271,22 @@ echo "Performing all file scan..."
 # ## Enable Cron
  check_cronjob
 echo "....${YELLOW} Rollback successfully..! $RESET.... "
+echo ""
 fi
 if [[ "${?}" -ne 0 ]]; then
     echo "Rollback failed.!!"
 else 
-    echo "Please update manual executing: ${YELLOW}sudo -u www-data php /var/www/nextcloud/updater/updater.phar --no-interaction${RESET}"
+    echo "Please update via Web UI or continue with executing: ${YELLOW}sudo -u www-data php /var/www/nextcloud/updater/updater.phar --no-interaction${RESET}"
     echo ""
 fi
 
-read -p "${YELLOW}Would you like to continue with manual update: ${RESET}" ANSWER
+echo "${YELLOW}ONLY ${RESET}Y\y ${YELLOW}will proceed forward with upgrade, press anything else will cancel.!!${RESET}"
+read -p "${YELLOW}Would you like to continue with update: ${RESET}" ANSWER
 if [[ $ANSWER == [Yy]* ]]; then
-    echo "${YELLOW}ONLY ${RESET}Y\y ${YELLOW}will proceed forward with upgrade, press anything else will cancel.!!${RESET}"
     echo "Proceeding with Applying Upgrade"
     sudo -u www-data php /var/www/nextcloud/updater/updater.phar --no-interaction     ##
 else
-    echo "Applying Changes Canceled"
+    echo "${RED}Applying Changes Canceled!!${RESET}"
     exit 1
 fi
 if [[ "${?}" -eq 0 ]]; then
