@@ -272,3 +272,9 @@ echo "Performing all file scan..."
  check_cronjob
 echo "....${YELLOW} Rollback successfully..! $RESET.... "
 fi
+if [[ "${?}" -ne 0 ]]; then
+    echo "Rollback failed.!!"
+else 
+    echo "Please update manual executing: ${YELLOW}sudo -u www-data php /var/www/nextcloud/updater/updater.phar --no-interaction${RESET}"
+    echo ""
+fi
