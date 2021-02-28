@@ -7,20 +7,16 @@
 ```
 git clone https://github.com/florinen/scripts.git
 ```
-2. Before running "upgrade_nc.sh" make sure you are backing up first by running "backup_cloud.sh"
-```
-./scripts/nc_backup/backup_cloud.sh
-```
-3. Change the version of nextcloud to the one you want to upgrade (Do Not Downgrade From Already Existing Version, Only UPGRADE). Change PHP version to match the one that is already running. 
+2. Change the version of nextcloud to the one you want to upgrade (Do Not Downgrade From Already Existing Version, Only UPGRADE). Change PHP version to match the one that is already running. 
 ```
 vim scripts/nc_backup/upgrade_nc.sh 
 Ex: 
 NC_TARGET_VER="18.07"
 PHP_VER="7.3"
 ```
-4. Run the script. 
+3. Run the script. 
 ```
-./scripts/nc_backup/upgrade_nc.sh
+bash scripts/nc_backup/cloud_upgrade.sh
 ```
 
 ## Notes:
