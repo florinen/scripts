@@ -9,7 +9,7 @@ RESET=$(tput sgr0)
 
 CURRDATE=$( date '+%m-%d-%Y' )
 NC_FOLDER="nextcloud"
-NC_TARGET_VER="20.0.8"
+NC_TARGET_VER="20.0.9"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
@@ -68,18 +68,26 @@ fi
 }
 ## Disable and enable CronJobs
 check_cronjob(){
-    CRONJOB=$(crontab  -l -u www-data |cut -d "*" -f1)
-    if [[ "${CRONJOB}"  = "" ]]; then
-        echo "Cron job is enabled, trying to disable...!"
+    CRONJOB=$(crontab  -l -u www-data |grep -w php |grep "#")
+    if [[ -z "${CRONJOB}"  ]]; then
+        echo "Cron job is enabled, disabling now...!"
         crontab  -l -u www-data | sed  's/^/#/' |crontab -u www-data -
-    elif [[ "${CRONJOB}" = "#" ]]; then
-        echo "Cron job is disabled, trying to enable...!"
+        
+        if [[ "${?}" -eq 0 ]]; then
+            echo "${GREEN}Successfully disabled...${RESET}"
+        else
+            echo "${RED}Ooops!!!${RESET} Unexpected error disabling Cron job..."
+        fi
+    elif [[ -n "${CRONJOB}" ]]; then
+        echo "Cron job is disabled, enabling now...!"
         crontab  -l -u www-data | sed  's/^.//' |crontab -u www-data -
+    
+        if [[ "${?}" -eq 0 ]]; then
+            echo "${GREEN}Successfully enabled...${RESET} "
+        else
+            echo "${RED}Ooops!!!${RESET} Unexpected error enabling Cron job..."
+        fi
     fi
-if [[ "${?}" -ne 0 ]]; then 
-    echo "Crontab check command did not execute successlully "
-
-fi
 }
 ## Check Ownership and Permissions of NC files and folders
 ckeck_owner_permissions(){
