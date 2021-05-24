@@ -16,6 +16,11 @@ NC_LOCATION="/var/www"
 DOWNLOAD_NC="curl -LO https://download.nextcloud.com/server/releases/nextcloud-$NC_TARGET_VER"
 PHP_VER="7.4"
 ## FUNCTIONS ##
+
+STATUS () {
+    echo "$?"
+}
+
 ## Check NC versions
 version_check(){
     #NC_OLD_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |grep -o '[^ ]*$')  # Cut the last field first space being the delimiter
@@ -258,7 +263,7 @@ fi
 if [[ "${NC_NEW_VER}" != "${NC_TARGET_VER}" ]]; then
     ## Stop NGINX service
      nginx_service_check
-#     ## Remove CronJob
+    ## Remove CronJob
      check_cronjob
     ## Remove new NC folder and rename backup nextcloud-old+date to nextcloud
     if [[ ! -d "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"  ]]; then  
@@ -272,11 +277,33 @@ if [[ "${NC_NEW_VER}" != "${NC_TARGET_VER}" ]]; then
     ckeck_owner_permissions
     ## Starting NGINX and Restart Redis and PHP7.3-fpm
        nginx_service_check
-## Files do not show up after a upgrade. A rescan of the files can help:
-echo "Performing all file scan..."
- file_scan
+    ## Files do not show up after a upgrade. A rescan of the files can help:
+    echo "Performing all file scan..."
+    file_scan
 
-# ## Enable Cron
- check_cronjob
-echo "....${YELLOW} Rollback successfully..! $RESET.... "
+    ## Enable Cron
+    check_cronjob
+    echo "....${YELLOW} Rollback successfully..! $RESET.... "
+fi
+# Update via Web UI if script fails. This is do to mager releases differences.
+if [[ "${STATUS}" -ne 0 ]]; then
+    echo "Rollback failed.!!"
+else 
+    echo -e "Please update via Web UI or continue with executing: ${YELLOW}sudo -u www-data php /var/www/nextcloud/updater/updater.phar --no-interaction${RESET} \n"
+    echo "${YELLOW}ONLY ${RESET}Y\y ${YELLOW}will proceed forward with upgrade, press anything else will cancel.!!${RESET}"
+    read -p "${YELLOW}Would you like to continue with update: ${RESET}" ANSWER
+    if [[ $ANSWER == [Yy]* ]]; then
+        echo "Proceeding with Applying Upgrade"
+        sudo -u www-data php /var/www/nextcloud/updater/updater.phar --no-interaction     ##
+    else
+        echo "${RED}Applying Changes Canceled!!${RESET}"
+        exit 1
+    fi
+    if [[ "$(STATUS)" -eq 0 ]]; then
+        echo ""
+        echo "Fixing DB missing opjects"
+        bash $HOME/scripts/nc_backup/db_missing_objects.sh
+    else 
+        STATUS
+    fi
 fi
