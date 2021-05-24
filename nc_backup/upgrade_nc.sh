@@ -302,7 +302,7 @@ else
     if [[ "$(STATUS)" -eq 0 ]]; then
         echo ""
         echo "Fixing DB missing opjects"
-        bash $(locate -i db_missing_objects.sh) 
+        bash $(find $HOME -name db_missing_objects.sh) 
     else 
         STATUS
     fi
