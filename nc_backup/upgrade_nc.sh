@@ -168,6 +168,7 @@ else
     else 
         STATUS
     fi
+    version_check
     echo "...$GREEN NC successfuly upgraded to version ${NC_NEW_VER}...!!$RESET"
     exit 
 fi
