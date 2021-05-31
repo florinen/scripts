@@ -34,7 +34,7 @@ version_check(){
         echo "$YELLOW>>Previous config.php not available right now!!!<<$RESET"
     else
         #NC_PREV_VER=$(cat "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"/config/config.php | grep version | awk '{print $3}' | sed "s/['\,,\"]//g" | cut -b -6)
-    NC_PREV_VER=$(sudo -u www-data php  ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE}/occ -V |awk '{print $NF}')
+        NC_PREV_VER=$(sudo -u www-data php  ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE}/occ -V |awk '{print $NF}')
     fi
 }
 
@@ -156,7 +156,7 @@ else
     read -p "${YELLOW}Would you like to continue with update: ${RESET}" ANSWER
     if [[ $ANSWER == [Yy]* ]]; then
         echo "Proceeding with Applying Upgrade"
-        sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/updater/updater.phar --no-interaction     ##
+        sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/updater/updater.phar --no-interaction     
     else
         echo "${RED}Applying Changes Canceled!!${RESET}"
         exit 1
