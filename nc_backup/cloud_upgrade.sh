@@ -16,7 +16,7 @@ echo ""
 
 # Executing DB backup script
 echo -e "${GREEN}Before update NC will backup DB first... \nBacking up DB...${RESET}"
-/bin/bash $(locate -i backup_cloud.sh) &> >(grep -E 'done!!|COMPLETE!!')
+/bin/bash $(find $HOME -name backup_cloud.sh) &> >(grep -E 'done!!|COMPLETE!!')
 
 if [[ "$(STATUS)" != "0" ]]; then
     echo "${RED}Backing up NC DB failed.!!${RESET}"
@@ -25,7 +25,7 @@ sleep 2
 
 # Executinh Upgrade NC script
 echo -e "${GREEN}Upgrading NC starts now... \nUpgrading...${RESET}"
-/bin/bash $(locate -i upgrade_nc.sh)
+/bin/bash $(find $HOME -name upgrade_nc.sh)
 
 if [[ "$(STATUS)" != "0" ]]; then
     echo "${RED}Upgrading NC failed.!!${RESET}"
