@@ -16,13 +16,13 @@
 
 
 #Some collors for human friendly
-RED=`tput setaf 1`
-GREEN=`tput setaf 2`
-YELLOW=`tput setaf 2`
-RESET=`tput sgr0`
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 2)
+RESET=$(tput sgr0)
 
 # Get the name of OS
-OS_NAME=`cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME=//g' | sed 's/"//g'`
+OS_NAME=$( grep "PRETTY_NAME" /etc/os-release | sed 's/PRETTY_NAME=//g' | sed 's/"//g')
 
 # Change this if you would like to move your helm home folder
 HELM_HOME='/usr/local/bin'
@@ -40,8 +40,8 @@ if curl --version >/dev/null; then
           INSTALLED_HELM=$(helm version --client  | awk '{print $2}' | cut -c 25-33 | sed 's/"//g')
           echo -e "${GREEN}Current version: ${INSTALLED_HELM}${RESET}"
         fi
-        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
-        if [[ "$SELLECTEDVERSION" ]]; then
+        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
+        if [[ -n "$SELLECTEDVERSION" ]]; then
           echo -e "$(tput setaf 2)#--- Downloading Helm for this $OSTYPE. ---#"
           wget -q --show-progress --progress=bar:force  "https://get.helm.sh/helm-${SELLECTEDVERSION}-darwin-amd64.tar.gz" 2>&1
   
@@ -63,8 +63,8 @@ if curl --version >/dev/null; then
           INSTALLED_HELM=$(helm version --client  | awk '{print $2}' | cut -c 25-33 | sed 's/"//g')
           echo -e "${GREEN}Current version: ${INSTALLED_HELM}${RESET}"
         fi
-        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
-        if [[ "$SELLECTEDVERSION" ]]; then
+        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
+        if [[ -n "$SELLECTEDVERSION" ]]; then
           echo -e "$(tput setaf 2)#--- Downloading Helm for this $OS_NAME. ---#"
           wget -q --show-progress --progress=bar:force  "https://get.helm.sh/helm-${SELLECTEDVERSION}-linux-amd64.tar.gz" 2>&1
 
@@ -86,8 +86,8 @@ if curl --version >/dev/null; then
           INSTALLED_HELM=$(helm version --client  | awk '{print $2}' | cut -c 25-33 | sed 's/"//g')
           echo -e "${GREEN}Current version: ${INSTALLED_HELM}${RESET}"
         fi
-        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
-        if [[ "$SELLECTEDVERSION" ]]; then
+        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
+        if [[ -n "$SELLECTEDVERSION" ]]; then
           echo -e "$(tput setaf 2)#--- Downloading Helm for this $OS_NAME. ---#"
           curl -LO --progress-bar  "https://get.helm.sh/helm-${SELLECTEDVERSION}-linux-amd64.tar.gz" 2>&1
  
@@ -109,8 +109,8 @@ if curl --version >/dev/null; then
           INSTALLED_HELM=$(helm version --client  | awk '{print $2}' | cut -c 25-33 | sed 's/"//g')
           echo -e "${GREEN}Current version: ${INSTALLED_HELM}${RESET}"
         fi
-        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
-        if [[ "$SELLECTEDVERSION" ]]; then
+        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
+        if [[ -n "$SELLECTEDVERSION" ]]; then
           echo -e "$(tput setaf 2)#--- Downloading Helm for this $OS_NAME. ---#"
           curl -LO --progress-bar  "https://get.helm.sh/helm-${SELLECTEDVERSION}-linux-amd64.tar.gz" 2>&1
  
