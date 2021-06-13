@@ -37,7 +37,7 @@ if curl --version >/dev/null; then
           INSTALLED_KUBECTL=$(kubectl version  --client  | awk '{print $5}' | sed -nr 's/^GitVersion\s*:\s*"([^"]*)".*$/\1/p')
           echo -e "${GREEN}Current version: ${INSTALLED_KUBECTL}${RESET}"
         fi
-        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
+        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
         if [[ -n "$SELLECTEDVERSION" ]]; then
           echo -e "$(tput setaf 2)#--- Downloading kubectl for this $OSTYPE. ---#"
           wget -q --show-progress --progress=bar:force  "https://storage.googleapis.com/kubernetes-release/release/${SELLECTEDVERSION}/bin/darwin/amd64/kubectl" 2>&1
@@ -55,7 +55,7 @@ if curl --version >/dev/null; then
           INSTALLED_KUBECTL=$(kubectl version  --client  | awk '{print $5}' | sed -nr 's/^GitVersion\s*:\s*"([^"]*)".*$/\1/p')
           echo -e "${GREEN}Current version: ${INSTALLED_KUBECTL}${RESET}"
         fi
-        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
+        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
         if [[ -n "$SELLECTEDVERSION" ]]; then
           echo -e "$(tput setaf 2)#--- Downloading kubectl for this $OS_NAME. ---#"
           wget -q --show-progress --progress=bar:force  "https://storage.googleapis.com/kubernetes-release/release/${SELLECTEDVERSION}/bin/linux/amd64/kubectl" 2>&1
@@ -73,7 +73,7 @@ if curl --version >/dev/null; then
           INSTALLED_KUBECTL=$(kubectl version  --client  | awk '{print $5}' | sed -nr 's/^GitVersion\s*:\s*"([^"]*)".*$/\1/p')
           echo -e "${GREEN}Current version: ${INSTALLED_KUBECTL}${RESET}"
         fi
-        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
+        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
         if [[ -n "$SELLECTEDVERSION" ]]; then
           echo -e "$(tput setaf 2)#--- Downloading kubectl for this $OS_NAME. ---#"
           curl -LO --progress-bar  "https://storage.googleapis.com/kubernetes-release/release/${SELLECTEDVERSION}/bin/linux/amd64/kubectl" 2>&1
@@ -91,7 +91,7 @@ if curl --version >/dev/null; then
           INSTALLED_KUBECTL=$(kubectl version  --client  | awk '{print $5}' | sed -nr 's/^GitVersion\s*:\s*"([^"]*)".*$/\1/p')
           echo -e "${GREEN}Current version: ${INSTALLED_KUBECTL}${RESET}"
         fi
-        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
+        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
         if [[ -n "$SELLECTEDVERSION" ]]; then
           echo -e "$(tput setaf 2)#--- Downloading kubectl for this $OS_NAME. ---#"
           curl -LO --progress-bar  "https://storage.googleapis.com/kubernetes-release/release/${SELLECTEDVERSION}/bin/linux/amd64/kubectl" 2>&1
