@@ -9,7 +9,7 @@ RESET=$(tput sgr0)
 
 CURRDATE=$( date '+%m-%d-%Y' )
 APP_NAME="nextcloud"
-NC_TARGET_VER="21.0.2"
+NC_TARGET_VER="21.0.3"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
@@ -29,7 +29,7 @@ version_check(){
     OLD_CONF=$(ls -l "${NC_LOCATION}" |grep -i old |awk '{print $9}')
     NC_CURRENT_VER=$(sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/occ -V |awk '{print $NF}'| cut -d'.' -f1)
     TARGET_VER=$(echo "${NC_TARGET_VER}" | cut -d'.' -f1)
-    value=$(($TARGET_VER - $NC_CURRENT_VER ))
+    
     if [[ ${OLD_CONF} = "" ]]; then
         echo "$YELLOW>>Previous config.php not available right now!!!<<$RESET"
     else
@@ -148,6 +148,7 @@ folder_check(){
 ##+++++++++++++++++++++++#
  
 version_check
+value=$(($TARGET_VER - $NC_CURRENT_VER ))
 if [[ "${value}" -eq "0" ]]; then
     echo "${GREEN}Upgrading NC with $0 ${RESET}"
 else 
