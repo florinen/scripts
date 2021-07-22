@@ -8,25 +8,33 @@ RESET=$(tput sgr0)
 
 
 CURRDATE=$( date '+%m-%d-%Y' )
-NC_FOLDER="nextcloud"
-NC_TARGET_VER="20.0.10"
+APP_NAME="nextcloud"
+NC_TARGET_VER="21.0.3"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
 DOWNLOAD_NC="curl -LO https://download.nextcloud.com/server/releases/nextcloud-$NC_TARGET_VER"
 PHP_VER="7.4"
 ## FUNCTIONS ##
+
+STATUS () {
+    echo "$?"
+}
+
 ## Check NC versions
 version_check(){
-    #NC_OLD_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |grep -o '[^ ]*$')  # Cut the last field first space being the delimiter
-    NC_OLD_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |awk '{print $NF}')
-    NC_NEW_VER=$(sudo -u www-data php /var/www/nextcloud/occ -V |awk '{print $NF}')
+    #NC_OLD_VER=$(sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/occ -V |grep -o '[^ ]*$')  # Cut the last field first space being the delimiter
+    NC_OLD_VER=$(sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/occ -V |awk '{print $NF}')
+    NC_NEW_VER=$(sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/occ -V |awk '{print $NF}')
     OLD_CONF=$(ls -l "${NC_LOCATION}" |grep -i old |awk '{print $9}')
+    NC_CURRENT_VER=$(sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/occ -V |awk '{print $NF}'| cut -d'.' -f1)
+    TARGET_VER=$(echo "${NC_TARGET_VER}" | cut -d'.' -f1)
+    
     if [[ ${OLD_CONF} = "" ]]; then
         echo "$YELLOW>>Previous config.php not available right now!!!<<$RESET"
     else
-        #NC_PREV_VER=$(cat "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/config/config.php | grep version | awk '{print $3}' | sed "s/['\,,\"]//g" | cut -b -6)
-    NC_PREV_VER=$(sudo -u www-data php  ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE}/occ -V |awk '{print $NF}')
+        #NC_PREV_VER=$(cat "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"/config/config.php | grep version | awk '{print $3}' | sed "s/['\,,\"]//g" | cut -b -6)
+        NC_PREV_VER=$(sudo -u www-data php  ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE}/occ -V |awk '{print $NF}')
     fi
 }
 
@@ -44,7 +52,7 @@ create_dir(){
         echo "Creating backup directory!"
         mkdir "${DIR}"
     fi
-if [[ "${?}" -ne 0 ]]; then 
+if [[ "$(STATUS)" -ne 0 ]]; then 
     echo "Make Dir command did not execute successlully "
     exit 1
 fi
@@ -62,7 +70,7 @@ nginx_service_check(){
         echo "NGINX service running, try stopping...!"
         /etc/init.d/nginx stop
     fi
-if [[ "${?}" -ne 0 ]]; then 
+if [[ "$(STATUS)" -ne 0 ]]; then 
     echo "Nginx service check command did not execute successlully "
 fi
 }
@@ -73,7 +81,7 @@ check_cronjob(){
         echo "Cron job is enabled, disabling now...!"
         crontab  -l -u www-data | sed  's/^/#/' |crontab -u www-data -
         
-        if [[ "${?}" -eq 0 ]]; then
+        if [[ "$(STATUS)" -eq 0 ]]; then
             echo "${GREEN}Successfully disabled...${RESET}"
         else
             echo "${RED}Ooops!!!${RESET} Unexpected error disabling Cron job..."
@@ -82,7 +90,7 @@ check_cronjob(){
         echo "Cron job is disabled, enabling now...!"
         crontab  -l -u www-data | sed  's/^.//' |crontab -u www-data -
     
-        if [[ "${?}" -eq 0 ]]; then
+        if [[ "$(STATUS)" -eq 0 ]]; then
             echo "${GREEN}Successfully enabled...${RESET} "
         else
             echo "${RED}Ooops!!!${RESET} Unexpected error enabling Cron job..."
@@ -93,38 +101,38 @@ check_cronjob(){
 ckeck_owner_permissions(){
     CHECK_OWNER=$(ls -l "${NC_LOCATION}" |grep -v old |grep  next |awk '{print $3" "$4}')
     if [[ "${CHECK_OWNER}" != "www-data www-data" ]];then
-        echo "Adjusting ${NC_FOLDER} ownership"
-        chown -R www-data:www-data /var/www/nextcloud
+        echo "Adjusting ${APP_NAME} ownership"
+        chown -R www-data:www-data ${NC_LOCATION}/${APP_NAME}
         chown -R www-data:acmeuser /var/www/letsencrypt
     else
         echo "Ownership is correct!"
     fi
     if [[ "${CHECK_OWNER}" != "www-data www-data" ]]; then
-        echo "Fix ${NC_FOLDER} files and directory permissions"
-        find /var/www/nextcloud/ -type d -exec chmod 750 {} \;
-        find /var/www/nextcloud/ -type f -exec chmod 640 {} \;   #May have permission issues  
+        echo "Fix ${APP_NAME} files and directory permissions"
+        find ${NC_LOCATION}/${APP_NAME}/ -type d -exec chmod 750 {} \;
+        find ${NC_LOCATION}/${APP_NAME}/ -type f -exec chmod 640 {} \;   #May have permission issues  
     else                                                            
         echo "File permission is correct!"
     fi
-if [[ "${?}" -ne 0 ]]; then 
+if [[ "$(STATUS)" -ne 0 ]]; then 
     echo "Error check command did not execute successlully "
 fi
 }
 ## Performing file scan
 file_scan(){
-    sudo -u www-data php /var/www/nextcloud/console.php files:scan --all
+    sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/console.php files:scan --all
 
-if [[ "${?}" -ne 0 ]]; then 
-    echo "Error scan command did not execute successlully "
-fi
+    if [[ "$(STATUS)" -ne 0 ]]; then 
+        echo "Error scan command did not execute successlully "
+    fi
 }
 ## Performing the Upgrade
 nc_upgrade(){
-sudo -u www-data php /var/www/nextcloud/occ upgrade
+sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/occ upgrade
 
-if [[ "${?}" -ne 0 ]]; then 
-    echo "Error upgrade command did not execute successlully "
-fi
+    if [[ "$(STATUS)" -ne 0 ]]; then 
+        echo "Error upgrade command did not execute successlully "
+    fi
 }
 
 ## Check if folder NC new or old exist
@@ -138,6 +146,33 @@ folder_check(){
 ##+++++++++++++++++++++++#
 ## STARTING the UPGRADE ##
 ##+++++++++++++++++++++++#
+ 
+version_check
+value=$(($TARGET_VER - $NC_CURRENT_VER ))
+if [[ "${value}" -eq "0" ]]; then
+    echo "${GREEN}Upgrading NC with $0 ${RESET}"
+else 
+    echo -e "Please update via Web UI or continue with executing: ${YELLOW}sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/updater/updater.phar --no-interaction${RESET} \n"
+    echo "${YELLOW}ONLY ${RESET}Y\y ${YELLOW}will proceed forward with upgrade, press anything else will cancel.!!${RESET}"
+    read -p "${YELLOW}Would you like to continue with update: ${RESET}" ANSWER
+    if [[ $ANSWER == [Yy]* ]]; then
+        echo "Proceeding with Applying Upgrade"
+        sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/updater/updater.phar --no-interaction     
+    else
+        echo "${RED}Applying Changes Canceled!!${RESET}"
+        exit 1
+    fi
+    if [[ "$(STATUS)" -eq 0 ]]; then
+        echo ""
+        echo "Fixing DB missing opjects"
+        bash $(find $HOME -name db_missing_objects.sh) 
+    else 
+        STATUS
+    fi
+    version_check
+    echo "...$GREEN NC successfuly upgraded to version ${NC_NEW_VER}...!!$RESET"
+    exit 
+fi
 
 # Create download directory
 create_dir
@@ -148,8 +183,8 @@ if [[ "${NC_OLD_VER}" != "${NC_TARGET_VER}" ]]; then
     if [[ "${NC_OLD_VER}" != "${NC_TARGET_VER}" ]]; then
         create_dir ; cd "${DIR_DNL}" ;
         ${DOWNLOAD_NC}.zip ;
-        unzip "${DIR_DNL}"/"${NC_FOLDER}"-"${NC_TARGET_VER}".zip &>/dev/null ;
-        rm "${DIR_DNL}"/"${NC_FOLDER}"-"${NC_TARGET_VER}".zip ; 
+        unzip "${DIR_DNL}"/"${APP_NAME}"-"${NC_TARGET_VER}".zip &>/dev/null ;
+        rm "${DIR_DNL}"/"${APP_NAME}"-"${NC_TARGET_VER}".zip ; 
         cd ..
     fi
 else
@@ -177,45 +212,45 @@ if [[ -z "${CHECK_OLD_NC}" ]]; then
     echo "Nothing to Move...!!! "
 else
     echo "Moving old backup to ${DIR} before deletion..."
-    mv "${NC_LOCATION}"/"${NC_FOLDER}"-old* "${DIR}"/    
+    mv "${NC_LOCATION}"/"${APP_NAME}"-old* "${DIR}"/    
 fi
 ## Rename current NC folder to nextcloud-old+date
 folder_check
 if [[ -z "${NC_RENAME}" ]]; then
         echo "NC did not rename"
 else
-    echo "Renameing folder ${NC_FOLDER} to ${NC_FOLDER}-old_"${CURRDATE}""
-    mv "${NC_LOCATION}"/"${NC_FOLDER}" "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"
+    echo "Renameing folder ${APP_NAME} to ${APP_NAME}-old_"${CURRDATE}""
+    mv "${NC_LOCATION}"/"${APP_NAME}" "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"
 fi
 # # Copy new just downloaded NC to /var/www 
 folder_check
 if [[ -z "${NEW_NC_FOLDER}" ]]; then
-    echo "New downloaded ${NC_FOLDER} did not exist...!!!"
+    echo "New downloaded ${APP_NAME} did not exist...!!!"
 else
     echo "Copy new NC folder to ${NC_LOCATION}/"
-    cp -r "${DIR_DNL}"/"${NC_FOLDER}" "${NC_LOCATION}"/ ;
-    rm -rf "${DIR_DNL}"/"${NC_FOLDER}"
+    cp -r "${DIR_DNL}"/"${APP_NAME}" "${NC_LOCATION}"/ ;
+    rm -rf "${DIR_DNL}"/"${APP_NAME}"
 fi
 # ## Copy old config.php fron old NC folder to new NC
-if [[ -d "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}" ]]; then
-    echo "Copy config.php from old ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE} to new ${NC_LOCATION}/${NC_FOLDER}..."
-    cp -r "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/config/config.php "${NC_LOCATION}"/"${NC_FOLDER}"/config/config.php
+if [[ -d "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}" ]]; then
+    echo "Copy config.php from old ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE} to new ${NC_LOCATION}/${APP_NAME}..."
+    cp -r "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"/config/config.php "${NC_LOCATION}"/"${APP_NAME}"/config/config.php
 else
-    echo "ERROR could not copy config php to "${NC_LOCATION}"/"${NC_FOLDER}"...!!"
+    echo "ERROR could not copy config php to "${NC_LOCATION}"/"${APP_NAME}"...!!"
 fi
 # Copy apps folder from old NC to new NC, make sure you delete app folder in new NC before COPYING!!
-if [[ -d "${NC_LOCATION}"/"${NC_FOLDER}"/apps ]]; then
-    echo "Copying folder APPS from old ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE} to new ${NC_LOCATION}/${NC_FOLDER}..."
-    rm -rf "${NC_LOCATION}"/"${NC_FOLDER}"/apps ;
-    cp -r "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/apps "${NC_LOCATION}"/"${NC_FOLDER}"/
+if [[ -d "${NC_LOCATION}"/"${APP_NAME}"/apps ]]; then
+    echo "Copying folder APPS from old ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE} to new ${NC_LOCATION}/${APP_NAME}..."
+    rm -rf "${NC_LOCATION}"/"${APP_NAME}"/apps ;
+    cp -r "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"/apps "${NC_LOCATION}"/"${APP_NAME}"/
 else
     echo "APPS folder did not copy successful"
 fi
 # Copy this folder only if you have themes ##
-if [[ -d "${NC_LOCATION}"/"${NC_FOLDER}"/themes ]]; then
-    echo "Copying folder THEMES from old ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE} to new ${NC_LOCATION}/${NC_FOLDER}..."
-    rm -rf "${NC_LOCATION}"/"${NC_FOLDER}"/themes ;
-    cp -r "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"/themes "${NC_LOCATION}"/"${NC_FOLDER}"/
+if [[ -d "${NC_LOCATION}"/"${APP_NAME}"/themes ]]; then
+    echo "Copying folder THEMES from old ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE} to new ${NC_LOCATION}/${APP_NAME}..."
+    rm -rf "${NC_LOCATION}"/"${APP_NAME}"/themes ;
+    cp -r "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"/themes "${NC_LOCATION}"/"${APP_NAME}"/
 else
     echo "Themes folder did not copy successful"
 fi
@@ -226,7 +261,7 @@ nginx_service_check
 
 ## Performing the UPGRADE of NC
 # echo "Disable app >>files<<"
-#sudo -u www-data php /var/www/nextcloud/occ app:disable files
+#sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/occ app:disable files
 echo "Performing the OCC Upgrade..."
 
 version_check
@@ -258,25 +293,47 @@ fi
 if [[ "${NC_NEW_VER}" != "${NC_TARGET_VER}" ]]; then
     ## Stop NGINX service
      nginx_service_check
-#     ## Remove CronJob
+    ## Remove CronJob
      check_cronjob
     ## Remove new NC folder and rename backup nextcloud-old+date to nextcloud
-    if [[ ! -d "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}"  ]]; then  
-        echo "Folder ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE} does not exists..."
-    elif [[ -d "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}" ]]; then
-        echo "Renameing folder ${NC_LOCATION}/${NC_FOLDER}-old_${CURRDATE} to ${NC_FOLDER}"
-        rm -rf "${NC_LOCATION}"/"${NC_FOLDER}"
-        mv "${NC_LOCATION}"/"${NC_FOLDER}"-old_"${CURRDATE}" "${NC_LOCATION}"/"${NC_FOLDER}"  
+    if [[ ! -d "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"  ]]; then  
+        echo "Folder ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE} does not exists..."
+    elif [[ -d "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}" ]]; then
+        echo "Renameing folder ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE} to ${APP_NAME}"
+        rm -rf "${NC_LOCATION}"/"${APP_NAME}"
+        mv "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}" "${NC_LOCATION}"/"${APP_NAME}"  
     fi
     ## Apply correct owner and permission
     ckeck_owner_permissions
     ## Starting NGINX and Restart Redis and PHP7.3-fpm
        nginx_service_check
-## Files do not show up after a upgrade. A rescan of the files can help:
-echo "Performing all file scan..."
- file_scan
+    ## Files do not show up after a upgrade. A rescan of the files can help:
+    echo "Performing all file scan..."
+    file_scan
 
-# ## Enable Cron
- check_cronjob
-echo "....${YELLOW} Rollback successfully..! $RESET.... "
+    ## Enable Cron
+    check_cronjob
+    echo "....${YELLOW} Rollback successfully..! $RESET.... "
 fi
+# Update via Web UI if script fails. This is do to mager releases differences.
+# if [[ "${STATUS}" -ne 0 ]]; then
+#     echo "Rollback failed.!!"
+# else 
+#     echo -e "Please update via Web UI or continue with executing: ${YELLOW}sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/updater/updater.phar --no-interaction${RESET} \n"
+#     echo "${YELLOW}ONLY ${RESET}Y\y ${YELLOW}will proceed forward with upgrade, press anything else will cancel.!!${RESET}"
+#     read -p "${YELLOW}Would you like to continue with update: ${RESET}" ANSWER
+#     if [[ $ANSWER == [Yy]* ]]; then
+#         echo "Proceeding with Applying Upgrade"
+#         sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/updater/updater.phar --no-interaction     ##
+#     else
+#         echo "${RED}Applying Changes Canceled!!${RESET}"
+#         exit 1
+#     fi
+#     if [[ "$(STATUS)" -eq 0 ]]; then
+#         echo ""
+#         echo "Fixing DB missing opjects"
+#         bash $(find $HOME -name db_missing_objects.sh) 
+#     else 
+#         STATUS
+#     fi
+# fi
