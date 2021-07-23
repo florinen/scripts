@@ -58,22 +58,22 @@ if [[ "$(STATUS)" -ne 0 ]]; then
 fi
 }
 ## Stop and Start services
-nginx_service_check(){
+service_check(){
     NGINX_STATUS=$(/etc/init.d/nginx status |grep Active |awk '{print $2}')
     if [[ "${NGINX_STATUS}" = "inactive" ]]; then
-        echo "Nginx not running, try starting...!"
-        /etc/init.d/nginx restart ;
-        /etc/init.d/redis-server restart ;
+        echo "Restarting Nginx, Redis and PHP...!"
+        /etc/init.d/nginx restart 
+        /etc/init.d/redis-server restart
         /etc/init.d/php"${PHP_VER}"-fpm restart
-        
     elif [[ "${NGINX_STATUS}" = "active" ]]; then
-        echo "NGINX service running, try stopping...!"
+        echo "NGINX service running, stopping it now...!"
         /etc/init.d/nginx stop
     fi
 if [[ "$(STATUS)" -ne 0 ]]; then 
     echo "Nginx service check command did not execute successlully "
 fi
 }
+
 ## Disable and enable CronJobs
 check_cronjob(){
     CRONJOB=$(crontab  -l -u www-data |grep -w php |grep "#")
@@ -193,7 +193,7 @@ else
 fi
 
 ## Check NGINX service and disable it
-nginx_service_check
+service_check
 ## Check and remove all cron jobs
 check_cronjob
 
@@ -257,7 +257,7 @@ fi
 ## Adjust file ownership and permissions:
 ckeck_owner_permissions
 ## Starting NGINX and Restart Redis and PHP7.3-fpm
-nginx_service_check
+service_check
 
 ## Performing the UPGRADE of NC
 # echo "Disable app >>files<<"
@@ -292,7 +292,7 @@ fi
 ## In case versions not a match then rollback. 
 if [[ "${NC_NEW_VER}" != "${NC_TARGET_VER}" ]]; then
     ## Stop NGINX service
-     nginx_service_check
+     service_check
     ## Remove CronJob
      check_cronjob
     ## Remove new NC folder and rename backup nextcloud-old+date to nextcloud
@@ -306,7 +306,7 @@ if [[ "${NC_NEW_VER}" != "${NC_TARGET_VER}" ]]; then
     ## Apply correct owner and permission
     ckeck_owner_permissions
     ## Starting NGINX and Restart Redis and PHP7.3-fpm
-       nginx_service_check
+       service_check
     ## Files do not show up after a upgrade. A rescan of the files can help:
     echo "Performing all file scan..."
     file_scan
@@ -315,25 +315,3 @@ if [[ "${NC_NEW_VER}" != "${NC_TARGET_VER}" ]]; then
     check_cronjob
     echo "....${YELLOW} Rollback successfully..! $RESET.... "
 fi
-# Update via Web UI if script fails. This is do to mager releases differences.
-# if [[ "${STATUS}" -ne 0 ]]; then
-#     echo "Rollback failed.!!"
-# else 
-#     echo -e "Please update via Web UI or continue with executing: ${YELLOW}sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/updater/updater.phar --no-interaction${RESET} \n"
-#     echo "${YELLOW}ONLY ${RESET}Y\y ${YELLOW}will proceed forward with upgrade, press anything else will cancel.!!${RESET}"
-#     read -p "${YELLOW}Would you like to continue with update: ${RESET}" ANSWER
-#     if [[ $ANSWER == [Yy]* ]]; then
-#         echo "Proceeding with Applying Upgrade"
-#         sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/updater/updater.phar --no-interaction     ##
-#     else
-#         echo "${RED}Applying Changes Canceled!!${RESET}"
-#         exit 1
-#     fi
-#     if [[ "$(STATUS)" -eq 0 ]]; then
-#         echo ""
-#         echo "Fixing DB missing opjects"
-#         bash $(find $HOME -name db_missing_objects.sh) 
-#     else 
-#         STATUS
-#     fi
-# fi
