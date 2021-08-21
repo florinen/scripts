@@ -9,7 +9,7 @@ RESET=$(tput sgr0)
 
 CURRDATE=$( date '+%m-%d-%Y' )
 APP_NAME="nextcloud"
-NC_TARGET_VER="21.0.3"
+NC_TARGET_VER="21.0.4"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
