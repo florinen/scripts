@@ -9,12 +9,13 @@ RESET=$(tput sgr0)
 
 CURRDATE=$( date '+%m-%d-%Y' )
 APP_NAME="nextcloud"
-NC_TARGET_VER="21.0.7"
+NC_TARGET_VER="22.0.0"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
 DOWNLOAD_NC="curl -LO https://download.nextcloud.com/server/releases/nextcloud-$NC_TARGET_VER"
 PHP_VER="7.4"
+DOWNLOAD=$(curl -s 'https://download.nextcloud.com/server/releases/' |awk -F'nextcloud-' '{print $2}' |sed 's/["\>]//g' |grep -E '\.zip$' |grep $NC_TARGET_VER)  
 ## FUNCTIONS ##
 
 STATUS () {
