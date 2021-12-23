@@ -10,12 +10,12 @@ $user = @("florin@varu.local")
 $password = Get-Content "C:\Users\fnenciu\cred\my_pass.txt" | ConvertTo-SecureString 
 $credential = New-Object System.Management.Automation.PsCredential($user, $password)
 $clusterName = "MyCL"
-$oldDate = { $_.Created -le (Get-Date).AddDays(-$days) }
-$days = "15"
+# $oldDate = { $_.Created -le (Get-Date).AddDays(-$days) }
+# $days = "15"
 #$logfile = "\\freenas.varu.local\NFS\Win16-SRV\vSphere\logs\log.txt"
-$timestamp = Get-Date
-$date = get-date -f MMddyyyy
-$destinationpath = "\\freenas.varu.local\NFS\vSphere\backupESXi_config"
+# $timestamp = Get-Date
+# $date = get-date -f MMddyyyy
+$destinationpath = "\\freenas.varu.local\NFS\ESXi-configBackups"
 
 
 # Load the PowerCLI SnapIn
