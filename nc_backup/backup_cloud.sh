@@ -65,7 +65,7 @@ fi
 echo ""
 echo "Rsync ran today backing up : ${HOSTNAME}"_"${DB_NAME}"_"${CURRDATE}"_v"${NC_VERSION}.sql  and   ${HOSTNAME}"_"${DB_NAME}"_"${CURRDATE}"_v"${NC_VERSION}.tar.gz at $(date)" >> ${DEST_LOCAL}"/"${HOSTNAME}"_"${DB_NAME}-backup.log 2>&1
 echo "=====>${YELLOW} Transfer NextCloud backups to remote ${RESET}<===="
-rsync -avzP  ${DEST_LOCAL}"/" ${REMOTE_USER}"@"${DEST_REMOTE}
+rsync -avzzP  ${DEST_LOCAL}"/" ${REMOTE_USER}"@"${DEST_REMOTE}
 echo ""
 if [[ "${?}" -ne 0 ]]; then
     echo "Rsync DB ${DB_NAME} was not successful.!!"
