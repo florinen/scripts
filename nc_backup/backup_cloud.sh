@@ -9,7 +9,7 @@ RESET=`tput sgr0`
 
 CURRDATE=` date '+%m-%d-%Y' `
 REMOTE_HOST="freenas.varu.local"
-REMOTE_USER="cloudusr"
+REMOTE_USER="nc_user"
 
 # Can get the DB name from mysql:
 #DB_NAME=$(mysql -u ${DB_USER} -p${DB_PASS} -e 'show databases;' |grep dDB)
@@ -25,7 +25,7 @@ DB_PASS=$(cat /var/www/nextcloud/config/config.php |grep dbpassword |cut -d'>' -
 NC_VERSION=$(sudo -u www-data php /var/www/nextcloud/occ -V |awk '{print $NF}')
 NC_FOLDER="/var/www/nextcloud"
 DEST_LOCAL="${HOME}/nc_backups"
-DEST_REMOTE="${REMOTE_HOST}:/mnt/Storage/testnfs/users/cloudusr"
+DEST_REMOTE="${REMOTE_HOST}:/mnt/Storage/nfs/nc_backups"
 #DB_PASS=`ssh  ${REMOTE_USER}"@"${REMOTE_HOST} "cat /mnt/Storage/nfs/Nextcloud/nc_backups/nc_user/.my*"`
 
 if [ -d  ${NC_FOLDER} ]; then
