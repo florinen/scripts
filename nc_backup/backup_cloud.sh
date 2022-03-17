@@ -25,7 +25,7 @@ DB_PASS=$(cat /var/www/nextcloud/config/config.php |grep dbpassword |cut -d'>' -
 NC_VERSION=$(sudo -u www-data php /var/www/nextcloud/occ -V |awk '{print $NF}')
 NC_FOLDER="/var/www/nextcloud"
 DEST_LOCAL="${HOME}/nc_backups"
-DEST_REMOTE="${REMOTE_HOST}:/mnt/Storage/nfs/Nextcloud/nc_backups/nc_user/backups"
+DEST_REMOTE="${REMOTE_HOST}:/mnt/Storage/nfs/nc_backups"
 #DB_PASS=`ssh  ${REMOTE_USER}"@"${REMOTE_HOST} "cat /mnt/Storage/nfs/Nextcloud/nc_backups/nc_user/.my*"`
 
 if [ -d  ${NC_FOLDER} ]; then
@@ -65,7 +65,7 @@ fi
 echo ""
 echo "Rsync ran today backing up : ${HOSTNAME}"_"${DB_NAME}"_"${CURRDATE}"_v"${NC_VERSION}.sql  and   ${HOSTNAME}"_"${DB_NAME}"_"${CURRDATE}"_v"${NC_VERSION}.tar.gz at $(date)" >> ${DEST_LOCAL}"/"${HOSTNAME}"_"${DB_NAME}-backup.log 2>&1
 echo "=====>${YELLOW} Transfer NextCloud backups to remote ${RESET}<===="
-rsync -avzP  ${DEST_LOCAL}"/" ${REMOTE_USER}"@"${DEST_REMOTE}
+rsync -avzzP  ${DEST_LOCAL}"/" ${REMOTE_USER}"@"${DEST_REMOTE}
 echo ""
 if [[ "${?}" -ne 0 ]]; then
     echo "Rsync DB ${DB_NAME} was not successful.!!"

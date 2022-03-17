@@ -9,7 +9,7 @@ RESET=$(tput sgr0)
 
 CURRDATE=$( date '+%m-%d-%Y' )
 APP_NAME="nextcloud"
-NC_TARGET_VER="22.0.0"
+NC_TARGET_VER="22.2.5"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
@@ -127,6 +127,17 @@ file_scan(){
         echo "Error scan command did not execute successlully "
     fi
 }
+## Fixing missing indices:
+missing_indices() {
+    if [[ "$(STATUS)" -eq 0 ]]; then
+        echo ""
+        echo "Fixing DB missing opjects"
+        sleep 3
+        bash $(find $HOME -name db_missing_objects.sh) 
+    else 
+        STATUS
+    fi
+}
 ## Performing the Upgrade
 nc_upgrade(){
 sudo -u www-data php ${NC_LOCATION}/${APP_NAME}/occ upgrade
@@ -163,13 +174,7 @@ else
         echo "${RED}Applying Changes Canceled!!${RESET}"
         exit 1
     fi
-    if [[ "$(STATUS)" -eq 0 ]]; then
-        echo ""
-        echo "Fixing DB missing opjects"
-        bash $(find $HOME -name db_missing_objects.sh) 
-    else 
-        STATUS
-    fi
+    missing_indices
     version_check
     echo "...$GREEN NC successfuly upgraded to version ${NC_NEW_VER}...!!$RESET"
     exit 
@@ -275,6 +280,8 @@ file_scan
 ## When upgrade finished, enable cron-job:
 check_cronjob
 
+# Fixing missing index:
+missing_indices
 
 #++++++++++++++++++++++++++++++##
 # Rolling back if upgrade fails##
