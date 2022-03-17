@@ -132,6 +132,7 @@ missing_indices() {
     if [[ "$(STATUS)" -eq 0 ]]; then
         echo ""
         echo "Fixing DB missing opjects"
+        sleep 3
         bash $(find $HOME -name db_missing_objects.sh) 
     else 
         STATUS
@@ -280,7 +281,6 @@ file_scan
 check_cronjob
 
 # Fixing missing index:
-sleep 10
 missing_indices
 
 #++++++++++++++++++++++++++++++##
