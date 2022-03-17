@@ -130,12 +130,12 @@ file_scan(){
 ## Fixing missing indices:
 missing_indices() {
     if [[ "$(STATUS)" -eq 0 ]]; then
-            echo ""
-            echo "Fixing DB missing opjects"
-            bash $(find $HOME -name db_missing_objects.sh) 
-        else 
-            STATUS
-        fi
+        echo ""
+        echo "Fixing DB missing opjects"
+        bash $(find $HOME -name db_missing_objects.sh) 
+    else 
+        STATUS
+    fi
 }
 ## Performing the Upgrade
 nc_upgrade(){
