@@ -98,7 +98,7 @@ check_cronjob(){
         fi
     fi
 }
-## Check Ownership and Permissions of NC files and folders
+## Check Ownership and Permissions of NC files and folders 
 ckeck_owner_permissions(){
     CHECK_OWNER=$(ls -l "${NC_LOCATION}" |grep -v old |grep  next |awk '{print $3" "$4}')
     if [[ "${CHECK_OWNER}" != "www-data www-data" ]];then
