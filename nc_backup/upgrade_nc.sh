@@ -9,7 +9,7 @@ RESET=$(tput sgr0)
 
 CURRDATE=$( date '+%m-%d-%Y' )
 APP_NAME="nextcloud"
-NC_TARGET_VER="22.2.8"
+NC_TARGET_VER="23.0.5"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
@@ -98,7 +98,7 @@ check_cronjob(){
         fi
     fi
 }
-## Check Ownership and Permissions of NC files and folders
+## Check Ownership and Permissions of NC files and folders 
 ckeck_owner_permissions(){
     CHECK_OWNER=$(ls -l "${NC_LOCATION}" |grep -v old |grep  next |awk '{print $3" "$4}')
     if [[ "${CHECK_OWNER}" != "www-data www-data" ]];then
