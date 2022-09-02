@@ -27,7 +27,7 @@ TERRAFORM_HOME='/usr/local/bin'
 if curl --version >/dev/null; then
   # Getting all available versions from hashicorp.
   release=$(curl --connect-timeout 3 -s -X GET "https://releases.hashicorp.com/terraform/")
-  foundTerraformVersions=$(echo "$release" | awk -F '/' '{print $3}' | grep -v '\s'  | grep -vE 'rc|beta|alpha|oci' |  sed  '/^$/d;' |grep -i terraform |cut -d'"' -f1 | head -n 50)
+  foundTerraformVersions=$(echo "$release" | awk -F '/' '{print $3}' | grep -v '\s' | grep -v '<\|alpha\|beta\|rc\|oci' |  sed  '/^$/d;' | head -n 30)
   echo "$foundTerraformVersions"
   # If releases founded script will continue
   if [[ -n $foundTerraformVersions ]]; then
