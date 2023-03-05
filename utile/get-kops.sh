@@ -13,13 +13,13 @@
 # fi
 
 #Some collors for human friendly
-RED=`tput setaf 1`
-GREEN=`tput setaf 2`
-YELLOW=`tput setaf 2`
-RESET=`tput sgr0`
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 2)
+RESET=$(tput sgr0)
 
 # Get the name of OS
-OS_NAME=`cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME=//g' | sed 's/"//g'`
+OS_NAME=$( grep "PRETTY_NAME" /etc/os-release | sed 's/PRETTY_NAME=//g' | sed 's/"//g')
 
 
 # Change this if you would like to move your Kops home folder
@@ -29,7 +29,7 @@ if curl --version >/dev/null; then
   foundHelmVersions=$(curl -s 'https://api.github.com/repos/kubernetes/kops/releases'  | jq '.[].tag_name' | grep -Ev 'beta|alpha|rc'| sed 's/"//g')
   echo "$release"
   # If releases founded script will continue
-  if [[ $foundHelmVersions ]]; then
+  if [[ -n $foundHelmVersions ]]; then
     if wget --version > /dev/null; then
       # If OS type is Apple then script will provide available versions
       if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -38,8 +38,8 @@ if curl --version >/dev/null; then
           INSTALLED_KOPS=$(kops version | awk '{print $2}')
           echo -e "${GREEN}Current version: ${INSTALLED_KOPS}${RESET}"
         fi
-        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
-        if [[ "$SELLECTEDVERSION" ]]; then
+        echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
+        if [[ -n "$SELLECTEDVERSION" ]]; then
           echo -e "$(tput setaf 2)#--- Downloading kops for this $OS_NAME. ---#"
           wget -q --show-progress --progress=bar:force  "https://github.com/kubernetes/kops/releases/download/${SELLECTEDVERSION}/kops-darwin-amd64" -O "./kops" 2>&1
 
@@ -56,8 +56,8 @@ if curl --version >/dev/null; then
             INSTALLED_KOPS=$(kops version | awk '{print $2}')
             echo -e "${GREEN}Current version: ${INSTALLED_KOPS}${RESET}"
           fi
-          echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
-          if [[ "$SELLECTEDVERSION" ]]; then
+          echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
+          if [[ -n "$SELLECTEDVERSION" ]]; then
             echo -e "$(tput setaf 2)#--- Downloading kops for this $OS_NAME. ---#"
             wget -q --show-progress --progress=bar:force  "https://github.com/kubernetes/kops/releases/download/${SELLECTEDVERSION}/kops-linux-amd64" -O "./kops" 2>&1
             
@@ -74,8 +74,8 @@ if curl --version >/dev/null; then
             INSTALLED_KOPS=$(kops version | awk '{print $2}')
             echo -e "${GREEN}Current version: ${INSTALLED_KOPS}${RESET}"
           fi
-          echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
-          if [[ "$SELLECTEDVERSION" ]]; then
+          echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
+          if [[ -n "$SELLECTEDVERSION" ]]; then
             echo -e "$(tput setaf 2)#--- Downloading kops for this $OS_NAME. ---#"
             curl -LO --progress-bar  "https://github.com/kubernetes/kops/releases/download/${SELLECTEDVERSION}/kops-linux-amd64" 2>&1
             
@@ -92,8 +92,8 @@ if curl --version >/dev/null; then
             INSTALLED_KOPS=$(kops version | awk '{print $2}')
             echo -e "${GREEN}Current version: ${INSTALLED_KOPS}${RESET}"
           fi
-          echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
-          if [[ "$SELLECTEDVERSION" ]]; then
+          echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
+          if [[ -n "$SELLECTEDVERSION" ]]; then
             echo -e "$(tput setaf 2)#--- Downloading kops for this $OS_NAME. ---#"
             curl -LO --progress-bar  "https://github.com/kubernetes/kops/releases/download/${SELLECTEDVERSION}/kops-linux-amd64" 2>&1
             

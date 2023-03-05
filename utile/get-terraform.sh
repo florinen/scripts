@@ -13,23 +13,24 @@
 # fi
 
 #Some collors for human friendly
-RED=`tput setaf 1`
-GREEN=`tput setaf 2`
-YELLOW=`tput setaf 2`
-RESET=`tput sgr0`
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 2)
+RESET=$(tput sgr0)
+
 
 # Get the name of OS
-OS_NAME=`cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME=//g' | sed 's/"//g'`
+OS_NAME=$( grep "PRETTY_NAME" /etc/os-release | sed 's/PRETTY_NAME=//g' | sed 's/"//g')
 
 # Change this if you would like to move your terraform home folder
 TERRAFORM_HOME='/usr/local/bin'
 if curl --version >/dev/null; then
   # Getting all available versions from hashicorp.
   release=$(curl --connect-timeout 3 -s -X GET "https://releases.hashicorp.com/terraform/")
-  foundTerraformVersions=$(echo "$release" | awk -F '/' '{print $3}' | grep -v '\s' | grep -v '<\|alpha\|beta\|rc\|oci' |  sed  '/^$/d;' | head -n 30)
+  foundTerraformVersions=$(echo "$release" | awk -F '/' '{print $3}' | grep -v '\s' | grep -v '<\|alpha\|beta\|rc\|oci' |  sed  '/^$/d;' | head -n 50)
   echo "$foundTerraformVersions"
   # If releases founded script will continue
-  if [[ $foundTerraformVersions ]]; then
+  if [[ -n $foundTerraformVersions ]]; then
     if wget --version > /dev/null; then
       # If OS type is Apple then script will provide available versions
       if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -38,8 +39,8 @@ if curl --version >/dev/null; then
             INSTALLED_TERRAFORM=$(terraform -version  | head -n1   | awk '{print $2}')
             echo -e "${GREEN}Current version: ${INSTALLED_TERRAFORM}${RESET}"
           fi
-          echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read SELLECTEDVERSION
-          if [[ "$SELLECTEDVERSION" ]]; then
+          echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
+          if [[ -n "$SELLECTEDVERSION" ]]; then
             echo -e "$(tput setaf 2)#--- Downloading terraform for this $OSTYPE. ---#"
             wget -q --show-progress --progress=bar:force  "https://releases.hashicorp.com/terraform/${SELLECTEDVERSION}/terraform_${SELLECTEDVERSION}_darwin_amd64.zip" 2>&1
 
@@ -57,8 +58,8 @@ if curl --version >/dev/null; then
             INSTALLED_TERRAFORM=$(terraform -version  | head -n1 | awk '{print $2}')
             echo -e "${GREEN}Current version: ${INSTALLED_TERRAFORM}${RESET}"
           fi
-          read -p "${GREEN}Please sellect one version to download: ${RESET}" SELLECTEDVERSION
-          if [[ "$SELLECTEDVERSION" ]]; then
+          read -p -r "${GREEN}Please sellect one version to download: ${RESET}" SELLECTEDVERSION
+          if [[ -n "$SELLECTEDVERSION" ]]; then
             echo -e "$(tput setaf 2)#--- Downloading terraform for this $OS_NAME. ---#"
             wget -q --show-progress --progress=bar:force   "https://releases.hashicorp.com/terraform/${SELLECTEDVERSION}/terraform_${SELLECTEDVERSION}_linux_amd64.zip" 2>&1
 
@@ -76,8 +77,9 @@ if curl --version >/dev/null; then
             INSTALLED_TERRAFORM=$(terraform -version  | head -n1 | awk '{print $2}')
             echo -e "${GREEN}Current version: ${INSTALLED_TERRAFORM}${RESET}"
           fi
-          read -p "${GREEN}Please sellect one version to download: ${RESET}" SELLECTEDVERSION
-          if [[ "$SELLECTEDVERSION" ]]; then
+          echo -e "${GREEN}Please sellect one version to download: ${RESET}"  && read -r SELLECTEDVERSION
+          #read -p -r "${GREEN}Please sellect one version to download: ${RESET}" SELLECTEDVERSION
+          if [[ -n "$SELLECTEDVERSION" ]]; then
             echo -e "$(tput setaf 2)#--- Downloading terraform for this $OS_NAME. ---#"
             curl -LO --progress-bar "https://releases.hashicorp.com/terraform/${SELLECTEDVERSION}/terraform_${SELLECTEDVERSION}_linux_amd64.zip" 2>&1
 
@@ -95,8 +97,8 @@ if curl --version >/dev/null; then
             INSTALLED_TERRAFORM=$(terraform -version  | head -n1 | awk '{print $2}')
             echo -e "${GREEN}Current version: ${INSTALLED_TERRAFORM}${RESET}"
           fi
-          read -p "${GREEN}Please sellect one version to download: ${RESET}" SELLECTEDVERSION
-          if [[ "$SELLECTEDVERSION" ]]; then
+          read -p -r "${GREEN}Please sellect one version to download: ${RESET}" SELLECTEDVERSION
+          if [[ -n "$SELLECTEDVERSION" ]]; then
             echo -e "$(tput setaf 2)#--- Downloading terraform for this $OS_NAME. ---#"
             curl -LO --progress-bar "https://releases.hashicorp.com/terraform/${SELLECTEDVERSION}/terraform_${SELLECTEDVERSION}_linux_amd64.zip" 2>&1
 
