@@ -24,8 +24,8 @@ fi
 sleep 2
 
 # Executinh Upgrade NC script
-echo -e "${GREEN}Upgrading NC starts now... \nUpgrading...${RESET}"
-/bin/bash "$(find "$HOME" -name upgrade_nc.sh)"
+echo -e "${GREEN}Upgrading NC starts now... \nListing available version for upgrade...${RESET}"
+/bin/bash $(find $HOME -name upgrade_nc.sh)
 
 if [[ "$(STATUS)" != "0" ]]; then
     echo "${RED}Upgrading NC failed.!!${RESET}"

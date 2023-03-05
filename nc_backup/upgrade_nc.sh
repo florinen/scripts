@@ -9,18 +9,26 @@ RESET=$(tput sgr0)
 
 CURRDATE=$( date '+%m-%d-%Y' )
 APP_NAME="nextcloud"
-NC_TARGET_VER="24.0.1"
 DIR="$HOME/old_nc"
 DIR_DNL="$HOME/new_download"
 NC_LOCATION="/var/www"
-DOWNLOAD_NC="curl -LO https://download.nextcloud.com/server/releases/nextcloud-$NC_TARGET_VER"
-PHP_VER="7.4"
-DOWNLOAD=$(curl -s 'https://download.nextcloud.com/server/releases/' |awk -F'nextcloud-' '{print $2}' |sed 's/["\>]//g' |grep -E '\.zip$' |grep $NC_TARGET_VER)  
+PHP_VER=$(php -v |head -1 |cut -d" " -f2  |cut -b -3)
+
 ## FUNCTIONS ##
 
 STATUS () {
     echo "$?"
 }
+
+echo ""
+curl -s 'https://download.nextcloud.com/server/releases/' |awk -F'nextcloud-' '{print $2}' |grep '.zip' |awk -F '.zip' '{print $1}' |sort -n |uniq |tail -n 20
+read -r -p "Select the version for upgrade: ?" NC_TARGET_VER
+if [[ -z "${NC_TARGET_VER}" ]]; then
+    echo "A version was not selectet..."
+    exit 1
+fi
+DOWNLOAD_NC="curl -LO https://download.nextcloud.com/server/releases/nextcloud-$NC_TARGET_VER"
+# DOWNLOAD=$(curl -s 'https://download.nextcloud.com/server/releases/' |awk -F'nextcloud-' '{print $2}' |sed 's/["\>]//g' |grep -E '\.zip$' |grep $NC_TARGET_VER)  
 
 ## Check NC versions
 version_check(){
