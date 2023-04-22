@@ -15,7 +15,7 @@ $clusterName = "MyCL"
 #$logfile = "\\freenas.varu.local\NFS\Win16-SRV\vSphere\logs\log.txt"
 # $timestamp = Get-Date
 # $date = get-date -f MMddyyyy
-$destinationpath = "\\freenas.varu.local\NFS\ESXi-configBackups"
+$destinationpath = "\\freenas.varu.local\NFS\vMware-backups\configBackups"
 
 
 # Load the PowerCLI SnapIn
