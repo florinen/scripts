@@ -7,14 +7,7 @@
 ```
 git clone https://github.com/florinen/scripts.git
 ```
-2. Change the version of nextcloud to the one you want to upgrade (Do Not Downgrade From Already Existing Version, Only UPGRADE). Change PHP version to match the one that is already running. 
-```
-vim $(find $HOME -name upgrade_nc.sh) 
-Ex: 
-NC_TARGET_VER="18.07"
-PHP_VER="7.3"
-```
-3. Run the script. 
+2. Run the script and follow the prompt selecting nextcloud version. 
 ```
 bash $(find $HOME -name cloud_upgrade.sh)
 ```
