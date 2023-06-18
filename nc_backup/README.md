@@ -7,7 +7,7 @@
 ```
 git clone https://github.com/florinen/scripts.git
 ```
-3. Run the script and follow the prompt selecting nextcloud version. 
+2. Run the script and follow the prompt selecting nextcloud version. 
 ```
 bash $(find $HOME -name cloud_upgrade.sh)
 ```
