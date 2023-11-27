@@ -54,12 +54,14 @@ if curl --version >/dev/null; then
       # If OS type is Linux then script will provide available versions
       elif [[ "$OS_NAME" == "Ubuntu"* ]]; then
           echo -e  "$foundTerraformVersions"
-          if terraform -version > /dev/null; then
+          if terraform -version &>/dev/null; then
             INSTALLED_TERRAFORM=$(terraform -version  | head -n1 | awk '{print $2}')
             echo -e "${GREEN}Current version: ${INSTALLED_TERRAFORM}${RESET}"
+          else
+            echo "Terraform not installed"
           fi
-          read -p -r "${GREEN}Please sellect one version to download: ${RESET}" SELLECTEDVERSION
-          if [[ -n "$SELLECTEDVERSION" ]]; then
+            read -p "${GREEN}Please sellect one version to download: ${RESET}" SELLECTEDVERSION
+          if [[ -n "${SELLECTEDVERSION}" ]]; then
             echo -e "$(tput setaf 2)#--- Downloading terraform for this $OS_NAME. ---#"
             wget -q --show-progress --progress=bar:force   "https://releases.hashicorp.com/terraform/${SELLECTEDVERSION}/terraform_${SELLECTEDVERSION}_linux_amd64.zip" 2>&1
 
