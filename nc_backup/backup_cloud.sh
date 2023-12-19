@@ -17,10 +17,10 @@ REMOTE_USER="nc_user"
 #DB_USER=$(cat /var/www/nextcloud/config/config.php |grep dbuser |cut -d'>' -f2 |sed "s/[ '\,]//g")
 
 # If you dont know the current DB credentials:
-DB_NAME=$(cat /var/www/nextcloud/config/config.php |grep dbname |cut -d'>' -f2 |sed "s/[ '\,]//g")
+DB_NAME=$(sudo cat /var/www/nextcloud/config/config.php |grep dbname |cut -d'>' -f2 |sed "s/[ '\,]//g")
 ## Backing up all DB's available in mysql using root USER: 
-DB_USER="root"
-DB_PASS=$(cat /var/www/nextcloud/config/config.php |grep dbpassword |cut -d'>' -f2 |sed "s/[ '\,]//g")
+DB_USER=$(sudo cat /var/www/nextcloud/config/config.php |grep dbuser |cut -d'>' -f2 |sed "s/[ '\,]//g")
+DB_PASS=$(sudo cat /var/www/nextcloud/config/config.php |grep dbpassword |cut -d'>' -f2 |sed "s/[ '\,]//g")
 
 NC_VERSION=$(sudo -u www-data php /var/www/nextcloud/occ -V |awk '{print $NF}')
 NC_FOLDER="/var/www/nextcloud"
@@ -42,7 +42,11 @@ if [ -d  ${NC_FOLDER} ]; then
     fi 
 fi     
 echo "====>${YELLOW} Backing up NextCloud database...!! ${RESET}<===="
-mysqldump -u ${DB_USER} -p${DB_PASS} -C ${DB_NAME} &>/dev/null > ${DEST_LOCAL}"/"${HOSTNAME}"_"${DB_NAME}"_"${CURRDATE}"_v"${NC_VERSION}.sql.tgz
+PGPASSWORD="'${DB_PASS}'"
+
+# "${PGPASSWORD}" pg_dump -U "${DB_USER}" -d "${DB_NAME}" &>/dev/null > ${DEST_LOCAL}"/"${HOSTNAME}"_"${DB_NAME}"_"${CURRDATE}"_v"${NC_VERSION}.sql.tgz
+# pg_dump "postgresql://<username>@<hostname>:5432/<database_name>"
+pg_dump "host=localhost port=5432 dbname=${DB_NAME} user=${DB_USER} password=${DB_PASS}"  >  ${DEST_LOCAL}"/"${HOSTNAME}"_"${DB_NAME}"_"${CURRDATE}"_v"${NC_VERSION}.sql.tgz
 
 if [[ "${?}" -ne 0 ]]; then
     echo "Backing up DB ${DB_NAME} was not successful.!!"
@@ -53,7 +57,7 @@ fi
 
 sleep 3
 echo "====>${YELLOW} Saving ${NC_FOLDER} folder - as tar file... ${RESET}<===="
-tar -cpvzf ${DEST_LOCAL}"/"${HOSTNAME}"_"${DB_NAME}"_"${CURRDATE}"_v"${NC_VERSION}.tar.gz ${NC_FOLDER}
+sudo tar -czf ${DEST_LOCAL}"/"${HOSTNAME}"_"${DB_NAME}"_"${CURRDATE}"_v"${NC_VERSION}.tar.gz ${NC_FOLDER}
 echo ""
 if [[ "${?}" -ne 0 ]]; then
     echo "Archiving DB ${DB_NAME} was not successful.!!"
@@ -65,7 +69,7 @@ fi
 echo ""
 echo "Rsync ran today backing up : ${HOSTNAME}"_"${DB_NAME}"_"${CURRDATE}"_v"${NC_VERSION}.sql  and   ${HOSTNAME}"_"${DB_NAME}"_"${CURRDATE}"_v"${NC_VERSION}.tar.gz at $(date)" >> ${DEST_LOCAL}"/"${HOSTNAME}"_"${DB_NAME}-backup.log 2>&1
 echo "=====>${YELLOW} Transfer NextCloud backups to remote ${RESET}<===="
-rsync -avzzP  ${DEST_LOCAL}"/" ${REMOTE_USER}"@"${DEST_REMOTE}
+rsync -avzzP --no-perms -e "ssh  -i \"$HOME/.ssh/id_ssh_ed25519\"" ${DEST_LOCAL}"/" ${REMOTE_USER}"@"${DEST_REMOTE}
 echo ""
 if [[ "${?}" -ne 0 ]]; then
     echo "Rsync DB ${DB_NAME} was not successful.!!"
