@@ -71,12 +71,12 @@ service_check(){
     NGINX_STATUS=$(/etc/init.d/nginx status |grep Active |awk '{print $2}')
     if [[ "${NGINX_STATUS}" = "inactive" ]]; then
         echo "Restarting Nginx, Redis and PHP...!"
-        /etc/init.d/nginx restart 
-        /etc/init.d/redis-server restart
-        /etc/init.d/php"${PHP_VER}"-fpm restart
+        sudo /etc/init.d/nginx restart 
+        sudo /etc/init.d/redis-server restart
+        sudo /etc/init.d/php"${PHP_VER}"-fpm restart
     elif [[ "${NGINX_STATUS}" = "active" ]]; then
         echo "NGINX service running, stopping it now...!"
-        /etc/init.d/nginx stop
+        sudo /etc/init.d/nginx stop
     fi
 if [[ "$(STATUS)" -ne 0 ]]; then 
     echo "Nginx service check command did not execute successlully "
@@ -88,7 +88,7 @@ check_cronjob(){
     CRONJOB=$(crontab  -l -u www-data |grep -w php |grep "#")
     if [[ -z "${CRONJOB}"  ]]; then
         echo "Cron job is enabled, disabling now...!"
-        crontab  -l -u www-data | sed  's/^/#/' |crontab -u www-data -
+        sudo crontab  -l -u www-data | sed  's/^/#/' |sudo crontab -u www-data -
         
         if [[ "$(STATUS)" -eq 0 ]]; then
             echo "${GREEN}Successfully disabled...${RESET}"
@@ -97,7 +97,7 @@ check_cronjob(){
         fi
     elif [[ -n "${CRONJOB}" ]]; then
         echo "Cron job is disabled, enabling now...!"
-        crontab  -l -u www-data | sed  's/^.//' |crontab -u www-data -
+        sudo crontab  -l -u www-data | sed  's/^.//' |sudo crontab -u www-data -
     
         if [[ "$(STATUS)" -eq 0 ]]; then
             echo "${GREEN}Successfully enabled...${RESET} "
@@ -111,15 +111,15 @@ ckeck_owner_permissions(){
     CHECK_OWNER=$(ls -l "${NC_LOCATION}" |grep -v old |grep  next |awk '{print $3" "$4}')
     if [[ "${CHECK_OWNER}" != "www-data www-data" ]];then
         echo "Adjusting ${APP_NAME} ownership"
-        chown -R www-data:www-data ${NC_LOCATION}/${APP_NAME}
-        chown -R www-data:acmeuser /var/www/letsencrypt
+        sudo chown -R www-data:www-data ${NC_LOCATION}/${APP_NAME}
+        sudo chown -R www-data:acmeuser /var/www/letsencrypt
     else
         echo "Ownership is correct!"
     fi
     if [[ "${CHECK_OWNER}" != "www-data www-data" ]]; then
         echo "Fix ${APP_NAME} files and directory permissions"
-        find ${NC_LOCATION}/${APP_NAME}/ -type d -exec chmod 750 {} \;
-        find ${NC_LOCATION}/${APP_NAME}/ -type f -exec chmod 640 {} \;   #May have permission issues  
+        sudo find ${NC_LOCATION}/${APP_NAME}/ -type d -exec chmod 750 {} \;
+        sudo find ${NC_LOCATION}/${APP_NAME}/ -type f -exec chmod 640 {} \;   #May have permission issues  
     else                                                            
         echo "File permission is correct!"
     fi
@@ -218,7 +218,7 @@ if [[ -z "${REM_NC_OLD}" ]]; then
     echo "Folder does not exists!!"
 else
     echo -e "Removing old backup from ${DIR}/\n${REM_NC_OLD}"
-    rm -rf "${DIR}"/*
+    sudo rm -rf "${DIR}"/*
 fi
 ## Check if old NC backups exist, move it to new folder created earlier for later deletion, extra step not really need it!!
 folder_check
@@ -226,7 +226,7 @@ if [[ -z "${CHECK_OLD_NC}" ]]; then
     echo "Nothing to Move...!!! "
 else
     echo "Moving old backup to ${DIR} before deletion..."
-    mv "${NC_LOCATION}"/"${APP_NAME}"-old* "${DIR}"/    
+    sudo mv "${NC_LOCATION}"/"${APP_NAME}"-old* "${DIR}"/    
 fi
 ## Rename current NC folder to nextcloud-old+date
 folder_check
@@ -234,7 +234,7 @@ if [[ -z "${NC_RENAME}" ]]; then
         echo "NC did not rename"
 else
     echo "Renameing folder ${APP_NAME} to ${APP_NAME}-old_"${CURRDATE}""
-    mv "${NC_LOCATION}"/"${APP_NAME}" "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"
+    sudo mv "${NC_LOCATION}"/"${APP_NAME}" "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"
 fi
 # # Copy new just downloaded NC to /var/www 
 folder_check
@@ -242,29 +242,29 @@ if [[ -z "${NEW_NC_FOLDER}" ]]; then
     echo "New downloaded ${APP_NAME} did not exist...!!!"
 else
     echo "Copy new NC folder to ${NC_LOCATION}/"
-    cp -r "${DIR_DNL}"/"${APP_NAME}" "${NC_LOCATION}"/ ;
-    rm -rf "${DIR_DNL}"/"${APP_NAME}"
+    sudo cp -r "${DIR_DNL}"/"${APP_NAME}" "${NC_LOCATION}"/ ;
+    sudo rm -rf "${DIR_DNL}"/"${APP_NAME}"
 fi
 # ## Copy old config.php fron old NC folder to new NC
 if [[ -d "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}" ]]; then
     echo "Copy config.php from old ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE} to new ${NC_LOCATION}/${APP_NAME}..."
-    cp -r "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"/config/config.php "${NC_LOCATION}"/"${APP_NAME}"/config/config.php
+    sudo cp -r "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"/config/config.php "${NC_LOCATION}"/"${APP_NAME}"/config/config.php
 else
     echo "ERROR could not copy config php to "${NC_LOCATION}"/"${APP_NAME}"...!!"
 fi
 # Copy apps folder from old NC to new NC, make sure you delete app folder in new NC before COPYING!!
 if [[ -d "${NC_LOCATION}"/"${APP_NAME}"/apps ]]; then
     echo "Copying folder APPS from old ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE} to new ${NC_LOCATION}/${APP_NAME}..."
-    rm -rf "${NC_LOCATION}"/"${APP_NAME}"/apps ;
-    cp -r "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"/apps "${NC_LOCATION}"/"${APP_NAME}"/
+    sudo rm -rf "${NC_LOCATION}"/"${APP_NAME}"/apps ;
+    sudo cp -r "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"/apps "${NC_LOCATION}"/"${APP_NAME}"/
 else
     echo "APPS folder did not copy successful"
 fi
 # Copy this folder only if you have themes ##
 if [[ -d "${NC_LOCATION}"/"${APP_NAME}"/themes ]]; then
     echo "Copying folder THEMES from old ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE} to new ${NC_LOCATION}/${APP_NAME}..."
-    rm -rf "${NC_LOCATION}"/"${APP_NAME}"/themes ;
-    cp -r "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"/themes "${NC_LOCATION}"/"${APP_NAME}"/
+    sudo rm -rf "${NC_LOCATION}"/"${APP_NAME}"/themes ;
+    sudo cp -r "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}"/themes "${NC_LOCATION}"/"${APP_NAME}"/
 else
     echo "Themes folder did not copy successful"
 fi
@@ -316,8 +316,8 @@ if [[ "${NC_NEW_VER}" != "${NC_TARGET_VER}" ]]; then
         echo "Folder ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE} does not exists..."
     elif [[ -d "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}" ]]; then
         echo "Renameing folder ${NC_LOCATION}/${APP_NAME}-old_${CURRDATE} to ${APP_NAME}"
-        rm -rf "${NC_LOCATION}"/"${APP_NAME}"
-        mv "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}" "${NC_LOCATION}"/"${APP_NAME}"  
+        sudo rm -rf "${NC_LOCATION}"/"${APP_NAME}"
+        sudo mv "${NC_LOCATION}"/"${APP_NAME}"-old_"${CURRDATE}" "${NC_LOCATION}"/"${APP_NAME}"  
     fi
     ## Apply correct owner and permission
     ckeck_owner_permissions
