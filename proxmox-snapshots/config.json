@@ -1,0 +1,11 @@
+{
+  "include_vms": [],
+  "exclude_vms": [],
+  "include_tags": [],
+  "retention_daily": 3,
+  "retention_weekly": 2,
+  "retention_monthly": 1,
+  "include_ram": false,
+  "log_file": "/var/log/pve-snapshot-manager.log",
+  "debug": false
+}
