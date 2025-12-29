@@ -163,7 +163,9 @@ class ProxmoxSnapshotManager:
         ]
 
         # Include RAM if configured
-        if not self.config.get('include_ram', False):
+        if self.config.get('include_ram', False):
+            command.extend(['-vmstate', '1'])
+        else:
             command.extend(['-vmstate', '0'])
 
         return self._run_pvesh_set(command)
