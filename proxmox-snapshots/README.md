@@ -153,13 +153,39 @@ Test the script without making any changes:
 
 ## Automated Scheduling with Cron
 
-Set up cron jobs to automate snapshot creation. Edit the root crontab:
+### Option 1: Using /etc/cron.d/ (Recommended)
+
+Copy the provided cron configuration file to `/etc/cron.d/`:
+
+```bash
+# On your Proxmox host
+cp /root/scripts/proxmox-snapshots/pve-snapshots /etc/cron.d/pve-snapshots
+chmod 644 /etc/cron.d/pve-snapshots
+```
+
+Edit the file to replace `pve` with your actual node name:
+
+```bash
+nano /etc/cron.d/pve-snapshots
+```
+
+The cron jobs will be automatically picked up by the cron daemon. No need to restart anything.
+
+Verify the cron jobs are loaded:
+
+```bash
+grep -r pve-snapshot /etc/cron.d/
+```
+
+### Option 2: Using Root Crontab
+
+Alternatively, you can add jobs directly to root's crontab:
 
 ```bash
 crontab -e
 ```
 
-Add the following lines (adjust paths and node name as needed):
+Add these lines (adjust paths and node name as needed):
 
 ```cron
 # Daily snapshots at 2:00 AM

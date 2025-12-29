@@ -1,0 +1,28 @@
+# Proxmox VE Snapshot Manager - Cron Configuration
+#
+# This file should be copied to /etc/cron.d/pve-snapshots on your Proxmox host
+#
+# Installation:
+#   cp pve-snapshots /etc/cron.d/pve-snapshots
+#   chmod 644 /etc/cron.d/pve-snapshots
+#
+# IMPORTANT: Replace 'pve' with your actual Proxmox node name
+# Find your node name by running: pvesh get /nodes
+#
+# Format: MIN HOUR DAY MONTH WEEKDAY USER COMMAND
+#
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Daily snapshots - Run every day at 2:00 AM
+# Keeps the 3 most recent daily snapshots
+0 2 * * * root /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t daily >> /var/log/pve-snapshot-cron.log 2>&1
+
+# Weekly snapshots - Run every Sunday at 3:00 AM
+# Keeps the 2 most recent weekly snapshots
+0 3 * * 0 root /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t weekly >> /var/log/pve-snapshot-cron.log 2>&1
+
+# Monthly snapshots - Run on the 1st of each month at 4:00 AM
+# Keeps only the most recent monthly snapshot
+0 4 1 * * root /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t monthly >> /var/log/pve-snapshot-cron.log 2>&1
