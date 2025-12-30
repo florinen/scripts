@@ -188,11 +188,11 @@ crontab -e
 Add these lines (adjust paths and node name as needed):
 
 ```cron
-# Daily snapshots at 2:00 AM
-0 2 * * * /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t daily >> /var/log/pve-snapshot-cron.log 2>&1
+# Daily snapshots at 3:00 AM
+0 3 * * * /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t daily >> /var/log/pve-snapshot-cron.log 2>&1
 
-# Weekly snapshots on Sunday at 3:00 AM
-0 3 * * 0 /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t weekly >> /var/log/pve-snapshot-cron.log 2>&1
+# Weekly snapshots on Sunday at 3:30 AM
+30 3 * * 0 /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t weekly >> /var/log/pve-snapshot-cron.log 2>&1
 
 # Monthly snapshots on the 1st at 4:00 AM
 0 4 1 * * /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t monthly >> /var/log/pve-snapshot-cron.log 2>&1

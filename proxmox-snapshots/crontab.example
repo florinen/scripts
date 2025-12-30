@@ -11,13 +11,13 @@
 # Cron format: MIN HOUR DAY MONTH WEEKDAY COMMAND
 #
 
-# Daily snapshots - Run every day at 2:00 AM
+# Daily snapshots - Run every day at 3:00 AM
 # Keeps the 3 most recent daily snapshots
-0 2 * * * /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t daily >> /var/log/pve-snapshot-cron.log 2>&1
+0 3 * * * /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t daily >> /var/log/pve-snapshot-cron.log 2>&1
 
-# Weekly snapshots - Run every Sunday at 3:00 AM
+# Weekly snapshots - Run every Sunday at 3:30 AM
 # Keeps the 2 most recent weekly snapshots
-0 3 * * 0 /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t weekly >> /var/log/pve-snapshot-cron.log 2>&1
+30 3 * * 0 /root/scripts/proxmox-snapshots/pve_snapshot_manager.py -c /root/scripts/proxmox-snapshots/config.json -n pve -t weekly >> /var/log/pve-snapshot-cron.log 2>&1
 
 # Monthly snapshots - Run on the 1st of each month at 4:00 AM
 # Keeps only the most recent monthly snapshot
