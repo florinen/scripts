@@ -1,0 +1,11 @@
+# Ignore sensitive configuration files
+*.conf
+*.config
+*_config.sh
+.env
+.env.*
+
+# Ignore backup files
+*.bak
+*.backup
+*~
