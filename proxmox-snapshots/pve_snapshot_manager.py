@@ -64,47 +64,64 @@ class ProxmoxSnapshotManager:
             self.logger.error(f"pvesh command failed: {e.stderr}")
             return False
 
-    def get_vm_list(self, node: str) -> List[Dict]:
-        """Get list of VMs on a node"""
-        vms = self._run_pvesh([f'/nodes/{node}/qemu'])
-        if not vms:
-            return []
-
-        # Filter VMs based on configuration
-        filtered_vms = []
+    def _filter_by_config(self, items: List[Dict]) -> List[Dict]:
+        """Filter VMs/containers based on configuration"""
+        filtered = []
         include_vms = self.config.get('include_vms', [])
         exclude_vms = self.config.get('exclude_vms', [])
         include_tags = self.config.get('include_tags', [])
 
-        # If both include lists are empty, process no VMs
+        # If both include lists are empty, process nothing
         if not include_vms and not include_tags:
-            self.logger.warning("No VMs specified in include_vms or include_tags. No VMs will be processed.")
             return []
 
-        for vm in vms:
-            vmid = vm['vmid']
-            name = vm.get('name', '')
-            tags = vm.get('tags', '').split(';') if vm.get('tags') else []
+        for item in items:
+            vmid = item['vmid']
+            name = item.get('name', '')
+            tags = item.get('tags', '').split(';') if item.get('tags') else []
 
             # Check exclusions first
             if vmid in exclude_vms or name in exclude_vms:
                 continue
 
-            # Check if VM is in include list
+            # Check if in include list
             if vmid in include_vms or name in include_vms:
-                filtered_vms.append(vm)
+                filtered.append(item)
                 continue
 
-            # Check if VM has matching tags
+            # Check if has matching tags
             if include_tags and any(tag in include_tags for tag in tags):
-                filtered_vms.append(vm)
+                filtered.append(item)
                 continue
 
-        return filtered_vms
+        return filtered
 
-    def get_snapshots(self, node: str, vmid: int) -> List[Dict]:
-        """Get list of snapshots for a VM"""
-        snapshots = self._run_pvesh([f'/nodes/{node}/qemu/{vmid}/snapshot'])
+    def get_vm_list(self, node: str) -> List[Dict]:
+        """Get list of QEMU VMs on a node"""
+        vms = self._run_pvesh([f'/nodes/{node}/qemu'])
+        if not vms:
+            return []
+
+        filtered = self._filter_by_config(vms)
+        for vm in filtered:
+            vm['type'] = 'qemu'
+        return filtered
+
+    def get_lxc_list(self, node: str) -> List[Dict]:
+        """Get list of LXC containers on a node"""
+        containers = self._run_pvesh([f'/nodes/{node}/lxc'])
+        if not containers:
+            return []
+
+        filtered = self._filter_by_config(containers)
+        for ct in filtered:
+            ct['type'] = 'lxc'
+        return filtered
+
+    def get_snapshots(self, node: str, vmid: int, vm_type: str = 'qemu') -> List[Dict]:
+        """Get list of snapshots for a VM or container"""
+        endpoint = 'qemu' if vm_type == 'qemu' else 'lxc'
+        snapshots = self._run_pvesh([f'/nodes/{node}/{endpoint}/{vmid}/snapshot'])
         if not snapshots:
             return []
 
@@ -147,41 +164,46 @@ class ProxmoxSnapshotManager:
         except ValueError:
             return None
 
-    def create_snapshot(self, node: str, vmid: int, snap_type: str) -> bool:
-        """Create a new snapshot"""
+    def create_snapshot(self, node: str, vmid: int, snap_type: str, vm_type: str = 'qemu') -> bool:
+        """Create a new snapshot for VM or container"""
         timestamp = datetime.now().strftime('%Y-%m-%d-%H%M%S')
         snap_name = f"{self.SNAPSHOT_PREFIX}-{snap_type}-{timestamp}"
         description = f"Automatic {snap_type} snapshot created at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 
-        self.logger.info(f"Creating {snap_type} snapshot for VM {vmid}: {snap_name}")
+        label = "container" if vm_type == 'lxc' else "VM"
+        self.logger.info(f"Creating {snap_type} snapshot for {label} {vmid}: {snap_name}")
 
+        endpoint = 'qemu' if vm_type == 'qemu' else 'lxc'
         command = [
             'create',
-            f'/nodes/{node}/qemu/{vmid}/snapshot',
+            f'/nodes/{node}/{endpoint}/{vmid}/snapshot',
             '-snapname', snap_name,
             '-description', description
         ]
 
-        # Include RAM if configured
-        if self.config.get('include_ram', False):
-            command.extend(['-vmstate', '1'])
-        else:
-            command.extend(['-vmstate', '0'])
+        # Include RAM/vmstate only for QEMU VMs (LXC doesn't support vmstate)
+        if vm_type == 'qemu':
+            if self.config.get('include_ram', False):
+                command.extend(['-vmstate', '1'])
+            else:
+                command.extend(['-vmstate', '0'])
 
         return self._run_pvesh_set(command)
 
-    def delete_snapshot(self, node: str, vmid: int, snap_name: str) -> bool:
-        """Delete a snapshot"""
-        self.logger.info(f"Deleting snapshot for VM {vmid}: {snap_name}")
+    def delete_snapshot(self, node: str, vmid: int, snap_name: str, vm_type: str = 'qemu') -> bool:
+        """Delete a snapshot from VM or container"""
+        label = "container" if vm_type == 'lxc' else "VM"
+        self.logger.info(f"Deleting snapshot for {label} {vmid}: {snap_name}")
 
+        endpoint = 'qemu' if vm_type == 'qemu' else 'lxc'
         command = [
             'delete',
-            f'/nodes/{node}/qemu/{vmid}/snapshot/{snap_name}'
+            f'/nodes/{node}/{endpoint}/{vmid}/snapshot/{snap_name}'
         ]
 
         return self._run_pvesh_set(command)
 
-    def apply_retention_policy(self, node: str, vmid: int, snapshots: List[Dict]) -> None:
+    def apply_retention_policy(self, node: str, vmid: int, snapshots: List[Dict], vm_type: str = 'qemu') -> None:
         """Apply retention policy to snapshots"""
         # Parse all snapshots
         parsed_snapshots = []
@@ -213,16 +235,17 @@ class ProxmoxSnapshotManager:
             'monthly': self.config.get('retention_monthly', 1)
         }
 
+        label = "container" if vm_type == 'lxc' else "VM"
         for snap_type, snaps in snapshots_by_type.items():
             keep_count = retention[snap_type]
             to_delete = snaps[keep_count:]
 
             if to_delete:
-                self.logger.info(f"VM {vmid}: Keeping {keep_count} {snap_type} snapshots, deleting {len(to_delete)}")
+                self.logger.info(f"{label} {vmid}: Keeping {keep_count} {snap_type} snapshots, deleting {len(to_delete)}")
                 for snap in to_delete:
-                    self.delete_snapshot(node, vmid, snap['name'])
+                    self.delete_snapshot(node, vmid, snap['name'], vm_type)
             else:
-                self.logger.debug(f"VM {vmid}: {len(snaps)} {snap_type} snapshots within retention policy")
+                self.logger.debug(f"{label} {vmid}: {len(snaps)} {snap_type} snapshots within retention policy")
 
     def should_create_snapshot(self, snap_type: str, existing_snapshots: List[Dict]) -> bool:
         """Determine if a new snapshot of given type should be created"""
@@ -258,30 +281,36 @@ class ProxmoxSnapshotManager:
         """Main execution method"""
         self.logger.info(f"Starting snapshot management (type: {snap_type}, node: {node}, dry_run: {self.dry_run})")
 
+        # Get both QEMU VMs and LXC containers
         vms = self.get_vm_list(node)
-        self.logger.info(f"Found {len(vms)} VMs to process")
+        containers = self.get_lxc_list(node)
+        all_items = vms + containers
 
-        for vm in vms:
-            vmid = vm['vmid']
-            name = vm.get('name', 'unknown')
+        self.logger.info(f"Found {len(vms)} VMs and {len(containers)} containers to process")
 
-            self.logger.info(f"Processing VM {vmid} ({name})")
+        for item in all_items:
+            vmid = item['vmid']
+            name = item.get('name', 'unknown')
+            vm_type = item.get('type', 'qemu')
+            label = "container" if vm_type == 'lxc' else "VM"
+
+            self.logger.info(f"Processing {label} {vmid} ({name})")
 
             # Get existing snapshots
-            snapshots = self.get_snapshots(node, vmid)
+            snapshots = self.get_snapshots(node, vmid, vm_type)
 
             # Check if we need to create a new snapshot
             if self.should_create_snapshot(snap_type, snapshots):
-                if self.create_snapshot(node, vmid, snap_type):
+                if self.create_snapshot(node, vmid, snap_type, vm_type):
                     # Refresh snapshot list after creation
-                    snapshots = self.get_snapshots(node, vmid)
+                    snapshots = self.get_snapshots(node, vmid, vm_type)
                 else:
-                    self.logger.error(f"Failed to create snapshot for VM {vmid}")
+                    self.logger.error(f"Failed to create snapshot for {label} {vmid}")
             else:
-                self.logger.info(f"VM {vmid}: Recent {snap_type} snapshot exists, skipping creation")
+                self.logger.info(f"{label} {vmid}: Recent {snap_type} snapshot exists, skipping creation")
 
             # Apply retention policy
-            self.apply_retention_policy(node, vmid, snapshots)
+            self.apply_retention_policy(node, vmid, snapshots, vm_type)
 
         self.logger.info("Snapshot management completed")
 
