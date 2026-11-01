@@ -2,4 +2,5 @@
 config
 *.tfvars
 *.txt
+iot/iot_scan.env
 
